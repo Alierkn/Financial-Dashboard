@@ -1,0 +1,5 @@
+{
+  "name": "Personal Finance Tracker",
+  "description": "An application to track personal monthly expenses, set a budget limit, categorize spending, and visualize financial habits with a modern and user-friendly interface.",
+  "requestFramePermissions": []
+}
