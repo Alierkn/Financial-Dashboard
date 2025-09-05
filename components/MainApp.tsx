@@ -97,7 +97,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       unsubscribeIncomeSources();
       unsubscribePreferences();
     };
-  }, [monthlyDataRef, incomeSourcesRef, preferencesRef, loading]);
+  }, [monthlyDataRef, incomeSourcesRef, preferencesRef]);
 
   const activeMonthData = useMemo(() => {
     if (!activeMonthId) return null;
