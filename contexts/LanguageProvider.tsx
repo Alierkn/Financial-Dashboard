@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-type Language = 'en' | 'tr';
+type Language = 'en' | 'tr' | 'it' | 'ar';
 
 const translations = {
   en: {
@@ -494,16 +494,510 @@ const translations = {
     incomeCategory_refunds: 'İadeler',
     incomeCategory_other: 'Diğer',
   },
+  it: {
+    // Auth
+    welcomeBack: 'Bentornato!',
+    createAccount: 'Crea Account',
+    signInToDashboard: 'Accedi per visualizzare la tua dashboard.',
+    getStartedByCreatingAccount: 'Inizia creando un nuovo account.',
+    emailAddress: 'Indirizzo Email',
+    password: 'Password',
+    processing: 'In elaborazione...',
+    signIn: 'Accedi',
+    orContinueWith: 'Oppure continua con',
+    signInWithGoogle: 'Accedi con Google',
+    dontHaveAccount: "Non hai un account? ",
+    alreadyHaveAccount: 'Hai già un account? ',
+    signUp: 'Registrati',
+    errorFirebaseConfigEmail: 'Errore di configurazione. Abilita il provider di accesso Email/Password nel tuo progetto Firebase.',
+    errorFirebaseConfigGoogle: 'Errore di configurazione. Abilita il provider di accesso Google nel tuo progetto Firebase.',
+    errorGoogleSignIn: 'Accesso con Google non riuscito.',
+    errorOccurred: 'Si è verificato un errore.',
+
+    // Dashboard
+    financialDashboard: 'Dashboard Finanziaria',
+    welcomeMessage: 'Benvenuto, <span class="font-semibold text-slate-300">{{email}}</span>',
+    signOut: 'Esci',
+    startNewMonthlyBudget: '+ Inizia Nuovo Budget Mensile',
+    welcomeToHub: 'Benvenuto nel Tuo Hub Finanziario!',
+    noBudgetsYet: "Non hai ancora impostato alcun budget mensile. <br/>Clicca il pulsante qui sopra per iniziare.",
+    viewYearSummary: 'Vedi Riepilogo {{year}}',
+    budget: 'Budget',
+    viewDetailsFor: 'Vedi dettagli per {{month}}',
+    deleteBudgetFor: 'Elimina budget per {{month}}',
+    
+    // Monthly Setup
+    newMonthlyBudget: 'Nuovo Budget Mensile',
+    setBudgetForNewMonth: 'Imposta il tuo budget per un nuovo mese.',
+    year: 'Anno',
+    month: 'Mese',
+    monthlyBudgetLimit: 'Limite Budget Mensile',
+    baseMonthlyIncome: 'Reddito Mensile di Base',
+    monthlyIncomeGoalOptional: 'Obiettivo di Reddito Mensile (Opzionale)',
+    monthlyIncomeGoal: 'Obiettivo di Reddito Mensile',
+    currency: 'Valuta',
+    cancel: 'Annulla',
+    creating: 'Creazione in corso...',
+    createBudget: 'Crea Budget',
+    errorMonthExists: 'Esiste già un budget per {{monthId}}.',
+    errorInvalidLimit: 'Inserisci un numero valido e positivo per il limite di budget.',
+    errorInvalidIncome: 'Inserisci un numero valido e non negativo per il reddito.',
+    errorInvalidIncomeGoal: 'Inserisci un numero valido e non negativo per l\'obiettivo di reddito.',
+    eg1000: 'es. 1000',
+    eg3000: 'es. 3000',
+    eg4000: 'es. 4000',
+
+    // Limit Setter (Initial Setup)
+    welcome: 'Benvenuto!',
+    setMonthlyBudgetPrompt: 'Imposta il tuo budget mensile per iniziare.',
+    monthlyIncome: 'Reddito Mensile',
+    settingUp: 'Impostazione...',
+    startTracking: 'Inizia a Tracciare',
+
+    // Monthly View
+    dashboard: 'Dashboard',
+    export: 'Esporta',
+    expenses: 'Spese',
+    trend: 'Andamento',
+    categories: 'Categorie',
+    income: 'Entrate',
+    incomeTrend: 'Andamento Entrate',
+
+    // Summary
+    totalSpent: 'Spesa Totale',
+    remainingBudget: 'Budget Rimanente',
+    limit: 'Limite',
+    completedIncome: 'Entrate Completate',
+    editGoal: 'Modifica Obiettivo',
+    setGoal: 'Imposta Obiettivo',
+    setIncomeGoal: 'Imposta obiettivo di reddito',
+    saveIncomeGoal: 'Salva obiettivo di reddito',
+    cancelEditIncomeGoal: 'Annulla modifica obiettivo di reddito',
+    goal: 'Obiettivo',
+    noGoalSet: 'Nessun obiettivo impostato.',
+    pendingIncome: 'Entrate in Sospeso',
+    potentialTotalIncome: 'Reddito totale potenziale',
+    categorySpending: 'Spesa per Categoria',
+    editBudgets: 'Modifica Budget',
+    setBudgets: 'Imposta Budget',
+    setCategoryBudgetsAndColors: 'Imposta Budget e Colori Categorie',
+    setColorFor: 'Imposta colore per {{categoryName}}',
+    colorPickerFor: 'Selettore colore per {{categoryName}}',
+    overAllocatedBy: 'Superato di:',
+    remainingToAllocate: 'Rimanente da Allocare:',
+    allocated: 'Allocato',
+    saving: 'Salvataggio...',
+    saveBudgets: 'Salva Budget',
+    noCategoryBudgetsSet: "Nessun budget di categoria impostato. Clicca 'Imposta Budget' per allocare il tuo limite di spesa.",
+
+    // Add Expense Form
+    addNewExpense: 'Aggiungi Nuova Spesa',
+    amount: 'Importo',
+    description: 'Descrizione',
+    paymentMethod: 'Metodo di Pagamento',
+    cash: 'Contanti',
+    card: 'Carta',
+    category: 'Categoria',
+    addExpense: 'Aggiungi Spesa',
+    adding: 'Aggiunta...',
+    egCoffeeWithFriends: 'es. Caffè con amici',
+    errorInvalidAmount: 'Inserisci un importo valido e positivo.',
+    errorEmptyDescription: 'La descrizione non può essere vuota.',
+    errorSelectCategory: 'Seleziona una categoria.',
+
+    // Expense List
+    recentExpenses: 'Spese Recenti',
+    searchExpenses: 'Cerca Spese',
+    searchByDescription: 'Cerca per descrizione...',
+    noExpensesAdded: 'Nessuna spesa ancora aggiunta.',
+    noExpensesMatchSearch: 'Nessuna spesa corrisponde alla tua ricerca.',
+    paidBy: 'Pagato con {{method}}',
+    deleteExpenseFor: 'Elimina spesa per {{description}}',
+
+    // Category View
+    spendingByCategory: 'Spesa per Categoria',
+    percentageOfTotal: '{{percentage}}% del totale',
+    categoryTotals: 'Totali Categoria (Clicca per mostrare/nascondere)',
+    grandTotal: 'Totale Generale',
+    noDataToDisplay: 'Nessun dato da visualizzare.',
+
+    // Income View
+    displayingIn: 'Visualizzazione in <strong>{{code}}</strong>. Tasso: 1 {{baseCode}} = {{rate}} {{code}}',
+    addNewIncomeSource: 'Aggiungi Nuova Fonte di Reddito',
+    sourceName: 'Nome Fonte',
+    egLessonWithAlex: 'es. Lezione con Alex',
+    incomeSourceName: 'Nome Fonte di Reddito',
+    incomeSourceAmount: 'Importo Fonte di Reddito',
+    addSource: 'Aggiungi Fonte',
+    yourIncomeSources: 'Le Tue Fonti di Reddito',
+    quickAddPrompt: 'Aggiungi rapidamente una transazione in sospeso o gestisci le tue fonti.',
+    transactionDate: 'Data Transazione',
+    noIncomeSources: 'Nessuna fonte di reddito ancora definita.',
+    editSourceName: 'Modifica Nome Fonte',
+    editSourceCategory: 'Modifica Categoria Fonte',
+    editSourceAmount: 'Modifica Importo Fonte',
+    save: 'Salva',
+    fromAmount: 'da {{symbol}}{{amount}}',
+    addIncomeFrom: 'Aggiungi entrata da {{name}}',
+    editSource: 'Modifica fonte {{name}}',
+    deleteSource: 'Elimina fonte {{name}}',
+    recentIncomeTransactions: 'Transazioni di Reddito Recenti',
+    noIncomeRecorded: 'Nessun reddito ancora registrato.',
+    pending: 'In Sospeso',
+    markAsPaid: 'Segna transazione da {{name}} come pagata',
+    deleteTransactionFor: 'Elimina transazione per {{name}}',
+    completed: 'Completato',
+    errorEnterSourceName: 'Inserisci un nome per la fonte.',
+    errorInvalidDate: 'Seleziona una data valida per la transazione.',
+    confirmDeleteSource: 'Sei sicuro di voler eliminare la fonte di reddito "{{name}}"? Questa azione non può essere annullata.',
+
+    // Trend Views
+    cumulativeSpendingTrend: 'Andamento Spesa Cumulativa',
+    cumulativeIncomeTrend: 'Andamento Reddito Cumulativo',
+    day: 'Giorno',
+    cumulative: 'Cumulativo',
+    noExpenseDataForTrend: 'Nessun dato di spesa per visualizzare l\'andamento.',
+    noCompletedIncomeForTrend: 'Nessun dato di reddito completato per visualizzare l\'andamento.',
+
+    // Comparison View
+    thisMonthVsLastMonth: 'Questo Mese vs. Mese Scorso',
+    cumulativeSpendingComparison: 'Confronto Spesa Cumulativa',
+    dayOfMonth: 'Giorno del Mese',
+
+    // Annual View
+    annualSummary: 'Riepilogo Annuale {{year}}',
+    viewYear: 'Vedi Anno',
+    previousYear: 'Anno precedente',
+    nextYear: 'Anno successivo',
+    selectYearToView: 'Seleziona l\'anno per vedere il riepilogo annuale',
+    totalIncome: 'Entrate Totali',
+    totalExpenses: 'Spese Totali',
+    netBalance: 'Saldo Netto',
+    net: 'Netto',
+    monthlyFinancialOverview: 'Panoramica Finanziaria Mensile',
+    underBudgetBy: 'Sotto Budget di',
+    overBudgetBy: 'Sopra Budget di',
+    yearlyExpenseBreakdown: 'Dettaglio Spese Annuali',
+    noExpenseDataForYear: 'Nessun dato di spesa per quest\'anno.',
+    yearInReview: 'Revisione dell\'Anno',
+    
+    // Currency Converter
+    viewIn: 'Vedi in',
+    loading: 'Caricamento',
+    error: 'Errore',
+    
+    // Firebase Not Configured
+    firebaseNotConfigured: 'Firebase non Configurato',
+    firebaseNotConfiguredMessage: 'Questa applicazione richiede una connessione a un progetto Firebase per funzionare correttamente. Aggiorna il file <code class="bg-slate-700/50 text-sky-300 p-1 rounded-md">firebase.ts</code> con la configurazione del tuo progetto Firebase.',
+    firebaseOpenFile: 'Apri <code class="text-sky-300">firebase.ts</code> e sostituisci la configurazione segnaposto:',
+    firebaseGetValues: 'Puoi ottenere questi valori dalla console del tuo progetto Firebase sotto Impostazioni Progetto.',
+
+    // Main App & Toasts
+    successMonthCreated: 'Nuovo budget mensile creato con successo!',
+    errorAdBlocker: 'Impossibile caricare i tuoi {{type}}. Ciò potrebbe essere dovuto a un\'estensione del browser (come un ad-blocker) o a un problema di rete. Prova a disabilitare le estensioni e controlla la tua connessione internet.',
+    errorCouldNotLoad: 'Impossibile caricare i tuoi {{type}}. Controlla la tua connessione e riprova. Errore: {{message}}',
+    errorCreateBudget: 'Creazione nuovo budget non riuscita. Controlla la tua connessione e riprova.',
+    confirmDeleteMonth: 'Sei sicuro di voler eliminare questo intero mese? Questa azione non può essere annullata.',
+    errorActiveMonth: 'Nessun mese attivo selezionato. Impossibile eseguire l\'azione.',
+    successExpenseAdded: 'Spesa aggiunta con successo!',
+    errorAddExpense: 'Aggiunta spesa non riuscita.',
+    successExpenseDeleted: 'Spesa eliminata.',
+    errorDeleteExpense: 'Eliminazione spesa non riuscita.',
+    successBudgetsSaved: 'Budget delle categorie salvati!',
+    errorSaveBudgets: 'Salvataggio budget delle categorie non riuscito.',
+    successGoalSet: 'Obiettivo di reddito aggiornato!',
+    errorSetGoal: 'Aggiornamento obiettivo di reddito non riuscito.',
+    successSourceAdded: 'Fonte di reddito aggiunta!',
+    errorAddSource: 'Aggiunta fonte di reddito non riuscita.',
+    successSourceUpdated: 'Fonte di reddito aggiornata!',
+    errorUpdateSource: 'Aggiornamento fonte di reddito non riuscito.',
+    successSourceDeleted: 'Fonte di reddito eliminata.',
+    errorDeleteSource: 'Eliminazione fonte di reddito non riuscita.',
+    successTransactionAdded: 'Transazione di reddito aggiunta.',
+    errorAddTransaction: 'Aggiunta transazione di reddito non riuscita.',
+    successTransactionDeleted: 'Transazione eliminata.',
+    errorDeleteTransaction: 'Eliminazione transazione non riuscita.',
+    successTransactionUpdated: 'Stato transazione aggiornato.',
+    errorUpdateTransaction: 'Aggiornamento stato transazione non riuscito.',
+    successColorsSaved: 'Colori delle categorie salvati.',
+    errorSaveColors: 'Salvataggio colori delle categorie non riuscito.',
+    successMonthDeleted: 'Il budget mensile è stato eliminato.',
+    errorDeleteMonth: 'Eliminazione del mese non riuscita.',
+    
+    // Categories
+    category_food: 'Cibo',
+    category_transport: 'Trasporti',
+    category_shopping: 'Shopping',
+    category_bills: 'Bollette',
+    category_entertainment: 'Intrattenimento',
+    category_health: 'Salute',
+    category_other: 'Altro',
+
+    // Income Categories
+    incomeCategory_private_lesson: 'Lezione Privata',
+    incomeCategory_italy_consultancy: 'Consulenza Italia',
+    incomeCategory_refunds: 'Rimborsi',
+    incomeCategory_other: 'Altro',
+  },
+  ar: {
+    // Auth
+    welcomeBack: 'أهلاً بعودتك!',
+    createAccount: 'إنشاء حساب',
+    signInToDashboard: 'سجل الدخول للوصول إلى لوحة التحكم الخاصة بك.',
+    getStartedByCreatingAccount: 'ابدأ بإنشاء حساب جديد.',
+    emailAddress: 'عنوان البريد الإلكتروني',
+    password: 'كلمة المرور',
+    processing: 'جارٍ المعالجة...',
+    signIn: 'تسجيل الدخول',
+    orContinueWith: 'أو المتابعة باستخدام',
+    signInWithGoogle: 'تسجيل الدخول باستخدام جوجل',
+    dontHaveAccount: 'ليس لديك حساب؟ ',
+    alreadyHaveAccount: 'لديك حساب بالفعل؟ ',
+    signUp: 'انشاء حساب',
+    errorFirebaseConfigEmail: 'خطأ في الإعداد. يرجى تمكين مزود تسجيل الدخول بالبريد الإلكتروني/كلمة المرور في مشروع Firebase الخاص بك.',
+    errorFirebaseConfigGoogle: 'خطأ في الإعداد. يرجى تمكين مزود تسجيل الدخول بجوجل في مشروع Firebase الخاص بك.',
+    errorGoogleSignIn: 'فشل تسجيل الدخول باستخدام جوجل.',
+    errorOccurred: 'حدث خطأ ما.',
+
+    // Dashboard
+    financialDashboard: 'لوحة التحكم المالية',
+    welcomeMessage: 'أهلاً بك، <span class="font-semibold text-slate-300">{{email}}</span>',
+    signOut: 'تسجيل الخروج',
+    startNewMonthlyBudget: '+ بدء ميزانية شهرية جديدة',
+    welcomeToHub: 'أهلاً بك في مركزك المالي!',
+    noBudgetsYet: "لم تقم بإعداد أي ميزانيات شهرية بعد. <br/>انقر على الزر أعلاه للبدء.",
+    viewYearSummary: 'عرض ملخص {{year}}',
+    budget: 'الميزانية',
+    viewDetailsFor: 'عرض تفاصيل شهر {{month}}',
+    deleteBudgetFor: 'حذف ميزانية شهر {{month}}',
+    
+    // Monthly Setup
+    newMonthlyBudget: 'ميزانية شهرية جديدة',
+    setBudgetForNewMonth: 'حدد ميزانيتك لشهر جديد.',
+    year: 'السنة',
+    month: 'الشهر',
+    monthlyBudgetLimit: 'حد الميزانية الشهرية',
+    baseMonthlyIncome: 'الدخل الشهري الأساسي',
+    monthlyIncomeGoalOptional: 'هدف الدخل الشهري (اختياري)',
+    monthlyIncomeGoal: 'هدف الدخل الشهري',
+    currency: 'العملة',
+    cancel: 'إلغاء',
+    creating: 'جارٍ الإنشاء...',
+    createBudget: 'إنشاء الميزانية',
+    errorMonthExists: 'توجد ميزانية بالفعل لشهر {{monthId}}.',
+    errorInvalidLimit: 'الرجاء إدخال رقم موجب صالح لحد الميزانية.',
+    errorInvalidIncome: 'الرجاء إدخال رقم صالح وغير سالب للدخل.',
+    errorInvalidIncomeGoal: 'الرجاء إدخال رقم صالح وغير سالب لهدف الدخل.',
+    eg1000: 'مثال: 1000',
+    eg3000: 'مثال: 3000',
+    eg4000: 'مثال: 4000',
+
+    // Limit Setter (Initial Setup)
+    welcome: 'أهلاً بك!',
+    setMonthlyBudgetPrompt: 'حدد ميزانيتك الشهرية للبدء.',
+    monthlyIncome: 'الدخل الشهري',
+    settingUp: 'جارٍ الإعداد...',
+    startTracking: 'ابدأ التتبع',
+
+    // Monthly View
+    dashboard: 'لوحة التحكم',
+    export: 'تصدير',
+    expenses: 'المصروفات',
+    trend: 'الاتجاه',
+    categories: 'الفئات',
+    income: 'الدخل',
+    incomeTrend: 'اتجاه الدخل',
+
+    // Summary
+    totalSpent: 'إجمالي المصروفات',
+    remainingBudget: 'الميزانية المتبقية',
+    limit: 'الحد',
+    completedIncome: 'الدخل المكتمل',
+    editGoal: 'تعديل الهدف',
+    setGoal: 'تحديد الهدف',
+    setIncomeGoal: 'تحديد هدف الدخل',
+    saveIncomeGoal: 'حفظ هدف الدخل',
+    cancelEditIncomeGoal: 'إلغاء تعديل هدف الدخل',
+    goal: 'الهدف',
+    noGoalSet: 'لم يتم تحديد هدف.',
+    pendingIncome: 'الدخل المعلق',
+    potentialTotalIncome: 'إجمالي الدخل المحتمل',
+    categorySpending: 'الإنفاق حسب الفئة',
+    editBudgets: 'تعديل الميزانيات',
+    setBudgets: 'تحديد الميزانيات',
+    setCategoryBudgetsAndColors: 'تحديد ميزانيات وألوان الفئات',
+    setColorFor: 'تحديد لون لـ {{categoryName}}',
+    colorPickerFor: 'منتقي الألوان لـ {{categoryName}}',
+    overAllocatedBy: 'تم التجاوز بمقدار:',
+    remainingToAllocate: 'المتبقي للتخصيص:',
+    allocated: 'المخصص',
+    saving: 'جارٍ الحفظ...',
+    saveBudgets: 'حفظ الميزانيات',
+    noCategoryBudgetsSet: "لم يتم تحديد ميزانيات للفئات. انقر على 'تحديد الميزانيات' لتخصيص حد الإنفاق الخاص بك.",
+
+    // Add Expense Form
+    addNewExpense: 'إضافة مصروف جديد',
+    amount: 'المبلغ',
+    description: 'الوصف',
+    paymentMethod: 'طريقة الدفع',
+    cash: 'نقداً',
+    card: 'بطاقة',
+    category: 'الفئة',
+    addExpense: 'إضافة مصروف',
+    adding: 'جارٍ الإضافة...',
+    egCoffeeWithFriends: 'مثال: قهوة مع الأصدقاء',
+    errorInvalidAmount: 'الرجاء إدخال مبلغ موجب صالح.',
+    errorEmptyDescription: 'لا يمكن أن يكون الوصف فارغًا.',
+    errorSelectCategory: 'الرجاء تحديد فئة.',
+
+    // Expense List
+    recentExpenses: 'المصروفات الأخيرة',
+    searchExpenses: 'بحث في المصروفات',
+    searchByDescription: 'بحث حسب الوصف...',
+    noExpensesAdded: 'لم تتم إضافة أي مصروفات بعد.',
+    noExpensesMatchSearch: 'لا توجد مصروفات تطابق بحثك.',
+    paidBy: 'تم الدفع بواسطة {{method}}',
+    deleteExpenseFor: 'حذف مصروف لـ {{description}}',
+
+    // Category View
+    spendingByCategory: 'الإنفاق حسب الفئة',
+    percentageOfTotal: '{{percentage}}% من الإجمالي',
+    categoryTotals: 'إجماليات الفئات (انقر للتبديل)',
+    grandTotal: 'المجموع الإجمالي',
+    noDataToDisplay: 'لا توجد بيانات لعرضها.',
+
+    // Income View
+    displayingIn: 'العرض بعملة <strong>{{code}}</strong>. السعر: 1 {{baseCode}} = {{rate}} {{code}}',
+    addNewIncomeSource: 'إضافة مصدر دخل جديد',
+    sourceName: 'اسم المصدر',
+    egLessonWithAlex: 'مثال: درس مع أليكس',
+    incomeSourceName: 'اسم مصدر الدخل',
+    incomeSourceAmount: 'مبلغ مصدر الدخل',
+    addSource: 'إضافة مصدر',
+    yourIncomeSources: 'مصادر دخلك',
+    quickAddPrompt: 'أضف بسرعة معاملة معلقة أو قم بإدارة مصادرك.',
+    transactionDate: 'تاريخ المعاملة',
+    noIncomeSources: 'لم يتم تحديد مصادر دخل بعد.',
+    editSourceName: 'تعديل اسم المصدر',
+    editSourceCategory: 'تعديل فئة المصدر',
+    editSourceAmount: 'تعديل مبلغ المصدر',
+    save: 'حفظ',
+    fromAmount: 'من {{symbol}}{{amount}}',
+    addIncomeFrom: 'إضافة دخل من {{name}}',
+    editSource: 'تعديل المصدر {{name}}',
+    deleteSource: 'حذف المصدر {{name}}',
+    recentIncomeTransactions: 'معاملات الدخل الأخيرة',
+    noIncomeRecorded: 'لم يتم تسجيل أي دخل بعد.',
+    pending: 'معلق',
+    markAsPaid: 'تمييز معاملة من {{name}} كمدفوعة',
+    deleteTransactionFor: 'حذف معاملة لـ {{name}}',
+    completed: 'مكتمل',
+    errorEnterSourceName: 'الرجاء إدخال اسم المصدر.',
+    errorInvalidDate: 'الرجاء تحديد تاريخ صالح للمعاملة.',
+    confirmDeleteSource: 'هل أنت متأكد من أنك تريد حذف مصدر الدخل "{{name}}؟" لا يمكن التراجع عن هذا الإجراء.',
+
+    // Trend Views
+    cumulativeSpendingTrend: 'الاتجاه التراكمي للإنفاق',
+    cumulativeIncomeTrend: 'الاتجاه التراكمي للدخل',
+    day: 'يوم',
+    cumulative: 'تراكمي',
+    noExpenseDataForTrend: 'لا توجد بيانات مصروفات لعرض الاتجاه.',
+    noCompletedIncomeForTrend: 'لا توجد بيانات دخل مكتملة لعرض الاتجاه.',
+
+    // Comparison View
+    thisMonthVsLastMonth: 'هذا الشهر مقابل الشهر الماضي',
+    cumulativeSpendingComparison: 'مقارنة الإنفاق التراكمي',
+    dayOfMonth: 'يوم من الشهر',
+
+    // Annual View
+    annualSummary: 'ملخص سنوي لعام {{year}}',
+    viewYear: 'عرض السنة',
+    previousYear: 'السنة السابقة',
+    nextYear: 'السنة التالية',
+    selectYearToView: 'حدد السنة لعرض الملخص السنوي',
+    totalIncome: 'إجمالي الدخل',
+    totalExpenses: 'إجمالي المصروفات',
+    netBalance: 'صافي الرصيد',
+    net: 'الصافي',
+    monthlyFinancialOverview: 'نظرة عامة مالية شهرية',
+    underBudgetBy: 'أقل من الميزانية بمقدار',
+    overBudgetBy: 'أكثر من الميزانية بمقدار',
+    yearlyExpenseBreakdown: 'تفصيل المصروفات السنوية',
+    noExpenseDataForYear: 'لا توجد بيانات مصروفات لهذه السنة.',
+    yearInReview: 'مراجعة السنة',
+    
+    // Currency Converter
+    viewIn: 'عرض بـ',
+    loading: 'جارٍ التحميل',
+    error: 'خطأ',
+    
+    // Firebase Not Configured
+    firebaseNotConfigured: 'Firebase غير مهيأ',
+    firebaseNotConfiguredMessage: 'يتطلب هذا التطبيق الاتصال بمشروع Firebase ليعمل بشكل صحيح. يرجى تحديث ملف <code class="bg-slate-700/50 text-sky-300 p-1 rounded-md">firebase.ts</code> ببيانات مشروع Firebase الخاص بك.',
+    firebaseOpenFile: 'افتح <code class="text-sky-300">firebase.ts</code> واستبدل بيانات الإعداد المؤقتة:',
+    firebaseGetValues: 'يمكنك الحصول على هذه القيم من وحدة تحكم مشروع Firebase الخاص بك ضمن إعدادات المشروع.',
+
+    // Main App & Toasts
+    successMonthCreated: 'تم إنشاء ميزانية شهرية جديدة بنجاح!',
+    errorAdBlocker: 'تعذر تحميل {{type}} الخاص بك. قد يكون هذا بسبب امتداد متصفح (مثل مانع الإعلانات) أو مشكلة في الشبكة. يرجى محاولة تعطيل الامتدادات والتحقق من اتصالك بالإنترنت.',
+    errorCouldNotLoad: 'تعذر تحميل {{type}}. يرجى التحقق من اتصالك والمحاولة مرة أخرى. خطأ: {{message}}',
+    errorCreateBudget: 'فشل في إنشاء ميزانية جديدة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
+    confirmDeleteMonth: 'هل أنت متأكد من أنك تريد حذف هذا الشهر بأكمله؟ لا يمكن التراجع عن هذا الإجراء.',
+    errorActiveMonth: 'لم يتم تحديد شهر نشط. تعذر تنفيذ الإجراء.',
+    successExpenseAdded: 'تمت إضافة المصروف بنجاح!',
+    errorAddExpense: 'فشل في إضافة المصروف.',
+    successExpenseDeleted: 'تم حذف المصروف.',
+    errorDeleteExpense: 'فشل في حذف المصروف.',
+    successBudgetsSaved: 'تم حفظ ميزانيات الفئات!',
+    errorSaveBudgets: 'فشل في حفظ ميزانيات الفئات.',
+    successGoalSet: 'تم تحديث هدف الدخل!',
+    errorSetGoal: 'فشل في تحديث هدف الدخل.',
+    successSourceAdded: 'تمت إضافة مصدر الدخل!',
+    errorAddSource: 'فشل في إضافة مصدر الدخل.',
+    successSourceUpdated: 'تم تحديث مصدر الدخل!',
+    errorUpdateSource: 'فشل في تحديث مصدر الدخل.',
+    successSourceDeleted: 'تم حذف مصدر الدخل.',
+    errorDeleteSource: 'فشل في حذف مصدر الدخل.',
+    successTransactionAdded: 'تمت إضافة معاملة الدخل.',
+    errorAddTransaction: 'فشل في إضافة معاملة الدخل.',
+    successTransactionDeleted: 'تم حذف المعاملة.',
+    errorDeleteTransaction: 'فشل في حذف المعاملة.',
+    successTransactionUpdated: 'تم تحديث حالة المعاملة.',
+    errorUpdateTransaction: 'فشل في تحديث حالة المعاملة.',
+    successColorsSaved: 'تم حفظ ألوان الفئات.',
+    errorSaveColors: 'فشل في حفظ ألوان الفئات.',
+    successMonthDeleted: 'تم حذف الميزانية الشهرية.',
+    errorDeleteMonth: 'فشل في حذف الشهر.',
+    
+    // Categories
+    category_food: 'طعام',
+    category_transport: 'مواصلات',
+    category_shopping: 'تسوق',
+    category_bills: 'فواتير',
+    category_entertainment: 'ترفيه',
+    category_health: 'صحة',
+    category_other: 'أخرى',
+
+    // Income Categories
+    incomeCategory_private_lesson: 'درس خصوصي',
+    incomeCategory_italy_consultancy: 'استشارات إيطاليا',
+    incomeCategory_refunds: 'مبالغ مستردة',
+    incomeCategory_other: 'أخرى',
+  },
 };
 
 const monthsByLang: Record<Language, string[]> = {
     en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-    tr: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    tr: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"],
+    it: ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"],
+    ar: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
 };
 
 const monthsShortByLang: Record<Language, string[]> = {
     en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    tr: ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+    tr: ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"],
+    it: ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"],
+    ar: ["ينا", "فبر", "مار", "أبر", "ماي", "يون", "يول", "أغس", "سبت", "أكت", "نوف", "ديس"]
 };
 
 interface LanguageContextType {
@@ -519,12 +1013,15 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useLocalStorage<Language>('language', 'tr');
 
+  const languages: Language[] = ['en', 'tr', 'it', 'ar'];
   const toggleLanguage = () => {
-    setLanguage(prev => (prev === 'en' ? 'tr' : 'en'));
+    const currentIndex = languages.indexOf(language);
+    const nextIndex = (currentIndex + 1) % languages.length;
+    setLanguage(languages[nextIndex]);
   };
 
   const t = (key: keyof typeof translations.en, options?: { [key: string]: string | number }) => {
-    let text = translations[language][key] || translations.en[key];
+    let text = translations[language]?.[key] || translations.en[key];
     if (options) {
       Object.entries(options).forEach(([optionKey, value]) => {
         text = text.replace(`{{${optionKey}}}`, String(value));
@@ -540,6 +1037,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     months: monthsByLang[language],
     monthsShort: monthsShortByLang[language]
   };
+  
+  // For Arabic RTL text
+  React.useEffect(() => {
+    document.body.dir = language === 'ar' ? 'rtl' : 'ltr';
+  }, [language]);
+
 
   return (
     <LanguageContext.Provider value={value}>
