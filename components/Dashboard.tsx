@@ -1,13 +1,17 @@
 import React, { useState, useMemo } from 'react';
+import type { User } from 'firebase/auth';
 import type { MonthlyData } from '../types';
 import { SpendingComparison } from './SpendingComparison';
+import { ThemeToggle } from './ThemeToggle';
 
 interface DashboardProps {
+  user: User;
   monthlyData: MonthlyData[];
   onStartNewMonth: () => void;
   onViewMonth: (monthId: string) => void;
   onViewAnnual: (year: number) => void;
   onDeleteMonth: (monthId: string) => void;
+  onSignOut: () => void;
 }
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -17,14 +21,14 @@ const ChevronIcon: React.FC<{ expanded: boolean }> = ({ expanded }) => (
         xmlns="http://www.w3.org/2000/svg" 
         className={`h-6 w-6 text-slate-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} 
         fill="none" 
-        viewBox="0 0 24 24" 
+        viewBox="0 0 24" 
         stroke="currentColor"
     >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
 );
 
-export const Dashboard: React.FC<DashboardProps> = ({ monthlyData, onStartNewMonth, onViewMonth, onViewAnnual, onDeleteMonth }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, monthlyData, onStartNewMonth, onViewMonth, onViewAnnual, onDeleteMonth, onSignOut }) => {
   const groupedData = useMemo(() => monthlyData.reduce((acc, data) => {
     const year = data.year;
     if (!acc[year]) {
@@ -59,15 +63,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ monthlyData, onStartNewMon
   return (
     <div className="max-w-7xl mx-auto">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 animate-fade-in">
-        <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-violet-500">
-          Financial Dashboard
-        </h1>
-        <button 
-          onClick={onStartNewMonth} 
-          className="bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300"
-        >
-          + Start New Monthly Budget
-        </button>
+        <div>
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-violet-500">
+              Financial Dashboard
+            </h1>
+            <div className="flex items-center gap-3 mt-2">
+                <p className="text-sm text-slate-400 truncate max-w-xs" title={user.email || 'User'}>
+                    Welcome, <span className="font-semibold text-slate-300">{user.email}</span>
+                </p>
+                <button onClick={onSignOut} className="text-xs text-slate-400 hover:text-white transition-colors">(Sign Out)</button>
+            </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <button 
+            onClick={onStartNewMonth} 
+            className="bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300"
+          >
+            + Start New Monthly Budget
+          </button>
+        </div>
       </header>
       
       {currentMonth && previousMonth && (
@@ -79,7 +94,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ monthlyData, onStartNewMon
       <main className="space-y-4">
         {monthlyData.length === 0 ? (
           <div className="text-center glass-card p-12 animate-fade-in">
-            <h2 className="text-2xl font-bold text-white mb-2">Welcome to Your Financial Hub!</h2>
+            <h2 className="text-2xl font-bold mb-2">Welcome to Your Financial Hub!</h2>
             <p className="text-slate-300 mb-6">You haven't set up any monthly budgets yet. <br/>Click the button above to get started.</p>
           </div>
         ) : (
@@ -87,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ monthlyData, onStartNewMon
             <div key={year} className="glass-card p-4 sm:p-6 animate-fade-in" style={{ animationDelay: `${(index + 1) * 100}ms`}}>
               <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleYear(year)}>
                 <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-bold text-white">{year}</h2>
+                    <h2 className="text-2xl font-bold">{year}</h2>
                     <ChevronIcon expanded={!!expandedYears[year]} />
                 </div>
                 <button 
@@ -117,7 +132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ monthlyData, onStartNewMon
                           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onViewMonth(data.id)}
                           className="w-full h-full p-4 cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500 rounded-2xl"
                         >
-                          <p className="text-lg font-bold text-white">{months[data.month - 1]}</p>
+                          <p className="text-lg font-bold">{months[data.month - 1]}</p>
                           <p className="text-sm text-slate-300">
                             Budget: {data.currency.symbol}{data.limit.toLocaleString()}
                           </p>
@@ -130,7 +145,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ monthlyData, onStartNewMon
                           aria-label={`Delete budget for ${months[data.month - 1]}`}
                           className="absolute top-3 right-3 z-50 text-slate-500 hover:text-red-400 p-2 rounded-full hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>

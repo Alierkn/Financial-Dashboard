@@ -3,7 +3,7 @@ import type { Currency } from '../types';
 import { CURRENCIES } from '../constants';
 
 interface MonthlySetupProps {
-  onSetup: (year: number, month: number, limit: number, income: number, currency: Currency) => void;
+  onSetup: (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency) => void;
   onCancel: () => void;
   existingMonths: string[]; // "YYYY-MM"
 }
@@ -13,6 +13,7 @@ export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, e
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [limit, setLimit] = useState('');
   const [income, setIncome] = useState('');
+  const [incomeGoal, setIncomeGoal] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>(CURRENCIES[0]);
   const [error, setError] = useState('');
 
@@ -20,6 +21,7 @@ export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, e
     e.preventDefault();
     const limitValue = parseFloat(limit);
     const incomeValue = parseFloat(income);
+    const incomeGoalValue = parseFloat(incomeGoal) || 0;
     const monthId = `${year}-${String(month).padStart(2, '0')}`;
 
     if (existingMonths.includes(monthId)) {
@@ -34,8 +36,12 @@ export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, e
       setError('Please enter a valid, non-negative number for income.');
       return;
     }
+    if (isNaN(incomeGoalValue) || incomeGoalValue < 0) {
+      setError('Please enter a valid, non-negative number for the income goal.');
+      return;
+    }
     setError('');
-    onSetup(year, month, limitValue, incomeValue, selectedCurrency);
+    onSetup(year, month, limitValue, incomeValue, incomeGoalValue, selectedCurrency);
   };
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -97,6 +103,21 @@ export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, e
                 placeholder="e.g., 3000"
                 className="w-full pl-12 pr-4 py-3 bg-slate-700/50 text-white border border-slate-600 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition"
                 aria-label="Base Monthly Income"
+              />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">{selectedCurrency.symbol}</span>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="incomeGoal" className="block text-sm font-medium text-slate-300 mb-2">Monthly Income Goal (Optional)</label>
+            <div className="relative">
+              <input
+                id="incomeGoal"
+                type="number"
+                value={incomeGoal}
+                onChange={(e) => setIncomeGoal(e.target.value)}
+                placeholder="e.g., 4000"
+                className="w-full pl-12 pr-4 py-3 bg-slate-700/50 text-white border border-slate-600 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition"
+                aria-label="Monthly Income Goal"
               />
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">{selectedCurrency.symbol}</span>
             </div>

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Currency, Expense } from '../types';
+import { CATEGORIES } from '../constants';
 
 interface SummaryProps {
   limit: number;
@@ -9,6 +10,12 @@ interface SummaryProps {
   transactionalIncome: number;
   pendingIncome: number;
   conversionRate: number;
+  categoryBudgets: { [key: string]: number } | undefined;
+  categoryColors: { [key: string]: string };
+  incomeGoal: number | undefined;
+  onUpdateCategoryBudgets: (budgets: { [key: string]: number }) => void;
+  onUpdateCategoryColors: (colors: { [key: string]: string }) => void;
+  onUpdateIncomeGoal: (goal: number) => void;
 }
 
 // Helper function for consistent currency formatting
@@ -16,152 +23,380 @@ const formatCurrency = (value: number, currency: Currency) => {
   return `${currency.symbol}${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-export const Summary: React.FC<SummaryProps> = ({ limit, expenses, currency, baseIncome, transactionalIncome, pendingIncome, conversionRate }) => {
-  const spent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+const defaultColorMap: { [key: string]: string } = Object.fromEntries(
+    CATEGORIES.map(cat => {
+      const colorMapping: Record<string, string> = {
+        'green-400': '#4ade80', 'sky-400': '#38bdf8', 'fuchsia-400': '#e879f9',
+        'orange-400': '#fb923c', 'violet-400': '#a78bfa', 'red-500': '#ef4444', 'slate-400': '#94a3b8',
+      };
+      const colorKey = cat.color.replace('text-', '');
+      return [cat.id, colorMapping[colorKey] || '#94a3b8'];
+    })
+);
 
-  const cashSpent = expenses
-    .filter(e => e.paymentMethod === 'cash')
-    .reduce((sum, exp) => sum + exp.amount, 0);
+const CategoryBudgetEditor: React.FC<{
+    limit: number,
+    currency: Currency,
+    currentBudgets: { [key: string]: number } | undefined,
+    currentColors: { [key: string]: string },
+    onSave: (newBudgets: { [key: string]: number }, newColors: { [key: string]: string }) => void,
+    onCancel: () => void
+}> = ({ limit, currency, currentBudgets, currentColors, onSave, onCancel }) => {
+    const [budgets, setBudgets] = useState<{ [key: string]: string }>(() => {
+        const initial: { [key: string]: string } = {};
+        const hasExistingBudgets = currentBudgets && Object.keys(currentBudgets).length > 0;
 
-  const cardSpent = expenses
-    .filter(e => e.paymentMethod === 'credit-card')
-    .reduce((sum, exp) => sum + exp.amount, 0);
+        CATEGORIES.forEach(cat => { initial[cat.id] = ''; });
 
-  const totalIncome = baseIncome + transactionalIncome;
+        if (hasExistingBudgets) {
+            Object.keys(currentBudgets).forEach(catId => {
+                if (initial.hasOwnProperty(catId)) {
+                    initial[catId] = currentBudgets[catId].toString();
+                }
+            });
+        } else {
+            const defaultBudgetCategories = ['food', 'transport', 'shopping', 'bills'];
+            const numDefaultCategories = defaultBudgetCategories.length;
+            
+            if (limit > 0 && numDefaultCategories > 0) {
+                const splitAmount = (limit / numDefaultCategories).toFixed(2);
+                defaultBudgetCategories.forEach(catId => {
+                    if (initial.hasOwnProperty(catId)) {
+                        initial[catId] = splitAmount;
+                    }
+                });
+            }
+        }
+        return initial;
+    });
 
-  const displayLimit = limit * conversionRate;
-  const displaySpent = spent * conversionRate;
-  const displayTotalIncome = totalIncome * conversionRate;
-  const displayBaseIncome = baseIncome * conversionRate;
-  const displayTransactionalIncome = transactionalIncome * conversionRate;
-  const displayPendingIncome = pendingIncome * conversionRate;
-  const displayCashSpent = cashSpent * conversionRate;
-  const displayCardSpent = cardSpent * conversionRate;
+    const [colors, setColors] = useState<{ [key: string]: string }>(() => {
+        const initialColors: { [key: string]: string } = {};
+        CATEGORIES.forEach(cat => {
+            initialColors[cat.id] = currentColors[cat.id] || defaultColorMap[cat.id];
+        });
+        return initialColors;
+    });
 
-  const remainingBudget = displayLimit - displaySpent;
-  const netBalance = displayTotalIncome - displaySpent;
-  const percentageSpent = limit > 0 ? (spent / limit) * 100 : 0;
+    const handleBudgetChange = (categoryId: string, value: string) => {
+        setBudgets(prev => ({ ...prev, [categoryId]: value }));
+    };
+
+    const handleColorChange = (categoryId: string, value: string) => {
+        setColors(prev => ({ ...prev, [categoryId]: value }));
+    };
+
+    const allocatedTotal = useMemo(() => {
+        return Object.values(budgets).reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
+    }, [budgets]);
+
+    const handleSave = () => {
+        const newBudgets: { [key: string]: number } = {};
+        for (const catId in budgets) {
+            const value = parseFloat(budgets[catId]);
+            if (!isNaN(value) && value > 0) {
+                newBudgets[catId] = value;
+            }
+        }
+        onSave(newBudgets, colors);
+    };
+
+    const remainingToAllocate = limit - allocatedTotal;
+    const allocatedPercentage = limit > 0 ? (allocatedTotal / limit) * 100 : 0;
+    const isOverAllocated = remainingToAllocate < 0;
+
+    return (
+        <div className="mt-4 border-t border-slate-700 pt-4 animate-fade-in">
+            <h3 className="text-lg font-semibold mb-3">Set Category Budgets & Colors</h3>
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                {CATEGORIES.map(category => (
+                    <div key={category.id} className="grid grid-cols-[1fr,auto,auto] items-center gap-3">
+                         <label htmlFor={`budget-${category.id}`} className="text-sm text-slate-300 col-span-1 truncate">{category.name}</label>
+                         <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currency.symbol}</span>
+                            <input
+                                id={`budget-${category.id}`}
+                                type="number"
+                                value={budgets[category.id]}
+                                onChange={(e) => handleBudgetChange(category.id, e.target.value)}
+                                placeholder="0.00"
+                                className="w-full pl-8 pr-2 py-1.5 bg-slate-700/50 text-white border border-slate-600 rounded-md focus:ring-1 focus:ring-sky-500 outline-none"
+                            />
+                         </div>
+                         <input
+                            type="color"
+                            value={colors[category.id]}
+                            onChange={(e) => handleColorChange(category.id, e.target.value)}
+                            className="w-9 h-9 p-0 bg-transparent border-none rounded-md cursor-pointer"
+                            title={`Set color for ${category.name}`}
+                            aria-label={`Color picker for ${category.name}`}
+                         />
+                    </div>
+                ))}
+            </div>
+            <div className="mt-4 border-t border-slate-700 pt-3 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                    <span className={`font-semibold ${isOverAllocated ? 'text-red-400' : 'text-green-400'}`}>
+                        {isOverAllocated ? 'Over-allocated by:' : 'Remaining to Allocate:'}
+                    </span>
+                    <span className={`font-bold ${isOverAllocated ? 'text-red-400' : 'text-green-400'}`}>
+                        {formatCurrency(Math.abs(remainingToAllocate), currency)}
+                    </span>
+                </div>
+                <div className="w-full bg-slate-700/50 rounded-full h-2.5 relative overflow-hidden">
+                    <div
+                        className={`h-2.5 rounded-full transition-all duration-300 ${isOverAllocated ? 'bg-red-500' : 'bg-sky-500'}`}
+                        style={{ width: `${Math.min(allocatedPercentage, 100)}%` }}
+                    ></div>
+                </div>
+                <div className="flex justify-between text-xs text-slate-400">
+                    <span>{formatCurrency(allocatedTotal, currency)} Allocated</span>
+                    <span>Limit: {formatCurrency(limit, currency)}</span>
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+                <button onClick={onCancel} className="bg-slate-600/50 hover:bg-slate-500/50 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Cancel</button>
+                <button onClick={handleSave} className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Save Budgets</button>
+            </div>
+        </div>
+    );
+};
+
+
+export const Summary: React.FC<SummaryProps> = ({
+  limit,
+  expenses,
+  currency,
+  baseIncome,
+  transactionalIncome,
+  pendingIncome,
+  conversionRate,
+  categoryBudgets,
+  categoryColors,
+  incomeGoal,
+  onUpdateCategoryBudgets,
+  onUpdateCategoryColors,
+  onUpdateIncomeGoal,
+}) => {
+  const [isEditingBudgets, setIsEditingBudgets] = useState(false);
+  const [isEditingIncomeGoal, setIsEditingIncomeGoal] = useState(false);
+  const [newIncomeGoal, setNewIncomeGoal] = useState<string>('');
+
+
+  const totalSpent = useMemo(() => {
+    return expenses.reduce((sum, expense) => sum + expense.amount, 0) * conversionRate;
+  }, [expenses, conversionRate]);
+
+  const totalIncome = useMemo(() => {
+      return (baseIncome + transactionalIncome) * conversionRate;
+  }, [baseIncome, transactionalIncome, conversionRate]);
+
+  const totalPending = useMemo(() => {
+      return pendingIncome * conversionRate;
+  }, [pendingIncome, conversionRate]);
+
+  const remaining = (limit * conversionRate) - totalSpent;
+  const percentageSpent = limit > 0 ? (totalSpent / (limit * conversionRate)) * 100 : 0;
   
-  const baseIncomePercentage = totalIncome > 0 ? (baseIncome / totalIncome) * 100 : 0;
-  const cashPercentage = spent > 0 ? (cashSpent / spent) * 100 : 0;
+  const incomeGoalInDisplayCurrency = (incomeGoal || 0) * conversionRate;
+  const incomePercentage = incomeGoalInDisplayCurrency > 0 ? (totalIncome / incomeGoalInDisplayCurrency) * 100 : 0;
 
-  const getProgressBarGradient = () => {
-    if (percentageSpent > 100) return 'from-red-500 to-pink-500';
-    if (percentageSpent > 85) return 'from-yellow-400 to-orange-400';
-    return 'from-green-400 to-teal-400';
+  const spendingByCategory = useMemo(() => {
+    const spending: { [key: string]: number } = {};
+    for (const expense of expenses) {
+      if (!spending[expense.category]) {
+        spending[expense.category] = 0;
+      }
+      spending[expense.category] += expense.amount * conversionRate;
+    }
+    return spending;
+  }, [expenses, conversionRate]);
+
+  const handleSaveBudgets = (newBudgets: { [key: string]: number }, newColors: { [key: string]: string }) => {
+    const baseCurrencyBudgets = { ...newBudgets };
+    for (const key in baseCurrencyBudgets) {
+        if (conversionRate !== 0) {
+            baseCurrencyBudgets[key] /= conversionRate;
+        }
+    }
+    onUpdateCategoryBudgets(baseCurrencyBudgets);
+    onUpdateCategoryColors(newColors);
+    setIsEditingBudgets(false);
   };
 
-  const getWarningMessage = () => {
-    if (percentageSpent > 100) return "You've exceeded your budget!";
-    if (percentageSpent > 85) return "Careful, you're approaching your budget limit!";
-    return null;
+  const handleSaveIncomeGoal = () => {
+    const goalValue = parseFloat(newIncomeGoal);
+    if (!isNaN(goalValue) && goalValue >= 0) {
+        const baseCurrencyGoal = conversionRate !== 0 ? goalValue / conversionRate : goalValue;
+        onUpdateIncomeGoal(baseCurrencyGoal);
+        setIsEditingIncomeGoal(false);
+    }
   };
   
-  const progressBarGradient = getProgressBarGradient();
-  const warningMessage = getWarningMessage();
+  const hasBudgets = categoryBudgets && Object.keys(categoryBudgets).length > 0;
 
   return (
     <div className="glass-card p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-white">Monthly Summary</h2>
-        {warningMessage && (
-            <div className={`px-3 py-1 text-sm font-semibold rounded-full ${percentageSpent > 100 ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
-                {warningMessage}
-            </div>
-        )}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        {/* Total Spent */}
+        <div className="space-y-2">
+          <p className="text-slate-400 text-sm font-medium">Total Spent</p>
+          <p className="text-3xl font-bold text-white">{formatCurrency(totalSpent, currency)}</p>
+          <div className="w-full bg-slate-700/50 rounded-full h-2.5">
+            <div
+              className={`h-2.5 rounded-full transition-all duration-500 ${percentageSpent > 100 ? 'bg-red-500' : 'bg-gradient-to-r from-sky-500 to-violet-500'}`}
+              style={{ width: `${Math.min(percentageSpent, 100)}%` }}
+            ></div>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center my-6">
-        <div>
-          <p className="text-slate-400 text-sm">Income (Completed)</p>
-          <p className="text-3xl font-bold text-white">
-            {formatCurrency(displayTotalIncome, currency)}
-          </p>
+        {/* Remaining Budget */}
+        <div className="space-y-2">
+            <p className="text-slate-400 text-sm font-medium">Remaining Budget</p>
+            <p className={`text-3xl font-bold ${remaining < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                {formatCurrency(remaining, currency)}
+            </p>
+            <p className="text-xs text-slate-500">
+                Limit: {formatCurrency(limit * conversionRate, currency)}
+            </p>
         </div>
-        <div>
-          <p className="text-slate-400 text-sm">Net Balance</p>
-          <p className={`text-3xl font-bold ${netBalance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {formatCurrency(netBalance, currency)}
-          </p>
+
+        {/* Total Income & Goal */}
+        <div className="space-y-2">
+            <div className="flex justify-between items-center">
+                <p className="text-slate-400 text-sm font-medium">Completed Income</p>
+                {!isEditingIncomeGoal && (
+                    <button
+                        onClick={() => {
+                            setIsEditingIncomeGoal(true);
+                            setNewIncomeGoal(String(incomeGoalInDisplayCurrency || ''));
+                        }}
+                        className="text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-1 px-2 rounded-lg transition-colors"
+                    >
+                        {incomeGoal && incomeGoal > 0 ? 'Edit Goal' : 'Set Goal'}
+                    </button>
+                )}
+            </div>
+
+            {isEditingIncomeGoal ? (
+                <div className="flex items-center gap-2 pt-2">
+                    <div className="relative flex-grow">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currency.symbol}</span>
+                        <input
+                            type="number"
+                            value={newIncomeGoal}
+                            onChange={(e) => setNewIncomeGoal(e.target.value)}
+                            placeholder="Set income goal"
+                            className="w-full pl-8 pr-2 py-1.5 bg-slate-700/50 text-white border border-slate-600 rounded-md focus:ring-1 focus:ring-sky-500 outline-none"
+                            aria-label="Monthly income goal"
+                        />
+                    </div>
+                    <button onClick={handleSaveIncomeGoal} className="p-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition-colors" aria-label="Save income goal">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    </button>
+                     <button onClick={() => setIsEditingIncomeGoal(false)} className="p-2 rounded-md bg-slate-600/50 hover:bg-slate-500/50 text-white transition-colors" aria-label="Cancel editing income goal">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                    </button>
+                </div>
+            ) : (
+                <>
+                    <p className="text-3xl font-bold text-green-400">{formatCurrency(totalIncome, currency)}</p>
+                    {incomeGoal && incomeGoal > 0 ? (
+                        <>
+                            <div className="w-full bg-slate-700/50 rounded-full h-2">
+                                <div
+                                    className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                                    style={{ width: `${Math.min(incomePercentage, 100)}%` }}
+                                ></div>
+                            </div>
+                            <p className="text-xs text-slate-500 text-right">
+                                Goal: {formatCurrency(incomeGoalInDisplayCurrency, currency)}
+                            </p>
+                        </>
+                    ) : (
+                         <p className="text-xs text-slate-500">
+                            No goal set.
+                        </p>
+                    )}
+                </>
+            )}
         </div>
-        <div>
-          <p className="text-slate-400 text-sm">Remaining Budget</p>
-          <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-violet-500">
-            {formatCurrency(remainingBudget, currency)}
-          </p>
+
+        {/* Pending Income */}
+         <div className="space-y-2">
+            <p className="text-slate-400 text-sm font-medium">Pending Income</p>
+            <p className="text-3xl font-bold text-yellow-400">{formatCurrency(totalPending, currency)}</p>
+            <p className="text-xs text-slate-500">
+                Potential total income: {formatCurrency(totalIncome + totalPending, currency)}
+            </p>
         </div>
       </div>
       
-      <div className="space-y-6">
-        {/* Budget Utilization */}
-        <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-2">Budget Utilization</h3>
-            <div className="w-full bg-slate-700/50 rounded-full h-4">
-                <div 
-                className={`h-4 rounded-full transition-all duration-500 bg-gradient-to-r ${progressBarGradient}`} 
-                style={{ width: `${Math.min(percentageSpent, 100)}%` }}
-                ></div>
-            </div>
-            <div className="flex justify-between text-sm text-slate-400 mt-2">
-                <p>Spent: <span className="font-semibold text-white">{formatCurrency(displaySpent, currency)}</span></p>
-                <p>Budget: <span className="font-semibold text-white">{formatCurrency(displayLimit, currency)}</span></p>
-            </div>
-        </div>
-
-        {/* Income Breakdown */}
-        <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-2">Income Breakdown</h3>
-            <div className="w-full bg-slate-700/50 rounded-full h-4 flex overflow-hidden">
-                {totalIncome > 0 ? (
-                <>
-                    <div
-                    className="bg-sky-500 h-full transition-all duration-500"
-                    style={{ width: `${baseIncomePercentage}%` }}
-                    title={`Base Income: ${formatCurrency(displayBaseIncome, currency)}`}
-                    ></div>
-                    <div
-                    className="bg-teal-400 h-full transition-all duration-500"
-                    style={{ width: `${100 - baseIncomePercentage}%` }}
-                    title={`Additional Income: ${formatCurrency(displayTransactionalIncome, currency)}`}
-                    ></div>
-                </>
-                ) : (
-                    <div className="h-full w-full bg-slate-700/50"></div>
-                )}
-            </div>
-            <div className="flex justify-between text-sm text-slate-400 mt-2">
-                <p><span className="inline-block w-3 h-3 rounded-full bg-sky-500 mr-2 align-middle"></span>Base: <span className="font-semibold text-white">{formatCurrency(displayBaseIncome, currency)}</span></p>
-                <p>Additional: <span className="font-semibold text-white">{formatCurrency(displayTransactionalIncome, currency)}</span><span className="inline-block w-3 h-3 rounded-full bg-teal-400 ml-2 align-middle"></span></p>
-            </div>
-             {pendingIncome > 0 && (
-                <div className="flex justify-between text-sm text-slate-400 mt-2 p-2 bg-yellow-500/10 border-l-4 border-yellow-400 rounded">
-                    <p><span className="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-2 align-middle"></span>Pending Income:</p>
-                    <span className="font-semibold text-yellow-300">{formatCurrency(displayPendingIncome, currency)}</span>
-                </div>
+      <div className="mt-6 border-t border-slate-700 pt-4">
+        <div className="flex justify-between items-center mb-3">
+            <h3 className="text-lg font-semibold text-slate-200">Category Spending</h3>
+            {!isEditingBudgets && (
+                <button 
+                    onClick={() => setIsEditingBudgets(true)} 
+                    className="text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-1.5 px-3 rounded-lg transition-colors"
+                >
+                    {hasBudgets ? 'Edit Budgets' : 'Set Budgets'}
+                </button>
             )}
         </div>
         
-        {/* Payment Breakdown */}
-        {spent > 0 && (
-            <div>
-                <h3 className="text-sm font-semibold text-slate-300 mb-2">Spending by Payment Method</h3>
-                <div className="w-full bg-slate-700/50 rounded-full h-4 flex overflow-hidden">
-                    <div
-                        className="bg-green-500 h-full transition-all duration-500"
-                        style={{ width: `${cashPercentage}%` }}
-                        title={`Cash: ${formatCurrency(displayCashSpent, currency)}`}
-                    ></div>
-                    <div
-                        className="bg-sky-500 h-full transition-all duration-500"
-                        style={{ width: `${100 - cashPercentage}%` }}
-                        title={`Card: ${formatCurrency(displayCardSpent, currency)}`}
-                    ></div>
+        {isEditingBudgets ? (
+            <CategoryBudgetEditor 
+                limit={limit * conversionRate}
+                currency={currency}
+                currentBudgets={categoryBudgets ? Object.entries(categoryBudgets).reduce((acc, [key, value]) => {
+                    acc[key] = value * conversionRate;
+                    return acc;
+                }, {} as {[key: string]: number}) : undefined}
+                currentColors={categoryColors}
+                onSave={handleSaveBudgets}
+                onCancel={() => setIsEditingBudgets(false)}
+            />
+        ) : (
+            hasBudgets ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                    {CATEGORIES.map(category => {
+                        const spent = spendingByCategory[category.id] || 0;
+                        const budget = (categoryBudgets?.[category.id] || 0) * conversionRate;
+                        if (budget === 0 && spent === 0) return null;
+                        
+                        const percent = budget > 0 ? (spent / budget) * 100 : 0;
+                        const isOverBudget = spent > budget;
+                        const color = categoryColors[category.id] || defaultColorMap[category.id];
+
+                        return (
+                            <div key={category.id}>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="font-medium" style={{ color: isOverBudget ? '#f87171' : color }}>{category.name}</span>
+                                    <span className={`font-semibold ${isOverBudget ? 'text-red-400' : 'text-slate-400'}`}>
+                                        {formatCurrency(spent, currency)}
+                                        <span className="text-slate-500"> / {formatCurrency(budget, currency)}</span>
+                                    </span>
+                                </div>
+                                <div className="w-full bg-slate-700/50 rounded-full h-2">
+                                    <div 
+                                        className="h-2 rounded-full"
+                                        style={{ 
+                                            width: `${Math.min(percent, 100)}%`,
+                                            backgroundColor: isOverBudget ? '#ef4444' : color
+                                        }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
-                <div className="flex justify-between text-sm text-slate-400 mt-2">
-                    <p><span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2 align-middle"></span>Cash: <span className="font-semibold text-white">{formatCurrency(displayCashSpent, currency)}</span></p>
-                    <p>Card: <span className="font-semibold text-white">{formatCurrency(displayCardSpent, currency)}</span><span className="inline-block w-3 h-3 rounded-full bg-sky-500 ml-2 align-middle"></span></p>
+            ) : (
+                <div className="text-center py-4">
+                    <p className="text-slate-400">No category budgets set. Click 'Set Budgets' to allocate your spending limit.</p>
                 </div>
-            </div>
+            )
         )}
       </div>
     </div>

@@ -18,7 +18,7 @@ export interface IncomeCategory {
 }
 
 export interface Expense {
-  id: string;
+  id:string;
   amount: number;
   description: string;
   category: Category['id'];
@@ -51,4 +51,6 @@ export interface MonthlyData {
   currency: Currency;
   expenses: Expense[];
   incomeTransactions: IncomeTransaction[];
+  incomeGoal?: number;
+  categoryBudgets?: { [key: string]: number };
 }

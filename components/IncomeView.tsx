@@ -14,16 +14,18 @@ interface IncomeViewProps {
   onDeleteTransaction: (id: string) => void;
   onUpdateTransactionStatus: (id: string, status: 'completed') => void;
   conversionRate: number;
+  incomeGoal: number | undefined;
+  onUpdateIncomeGoal: (goal: number) => void;
 }
 
 const PendingIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
 const CompletedIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
@@ -40,7 +42,9 @@ export const IncomeView: React.FC<IncomeViewProps> = ({
   onAddTransaction,
   onDeleteTransaction,
   onUpdateTransactionStatus,
-  conversionRate
+  conversionRate,
+  incomeGoal,
+  onUpdateIncomeGoal,
 }) => {
   const [sourceName, setSourceName] = useState('');
   const [sourceAmount, setSourceAmount] = useState('');
@@ -52,19 +56,28 @@ export const IncomeView: React.FC<IncomeViewProps> = ({
   const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{ name: string, amount: string, category: string }>({ name: '', amount: '', category: ''});
   const [editErrors, setEditErrors] = useState<{ name?: string; amount?: string }>({});
+  
+  const [isEditingIncomeGoal, setIsEditingIncomeGoal] = useState(false);
+  const [newIncomeGoal, setNewIncomeGoal] = useState('');
 
-  const { pendingTransactions, completedTransactions } = useMemo(() => {
+  const { pendingTransactions, completedTransactions, totalCompletedIncome } = useMemo(() => {
     const pending: IncomeTransaction[] = [];
     const completed: IncomeTransaction[] = [];
+    let completedSum = 0;
     incomeTransactions.forEach(t => {
       if (t.status === 'pending') {
         pending.push(t);
       } else {
         completed.push(t);
+        completedSum += t.amount;
       }
     });
-    return { pendingTransactions: pending, completedTransactions: completed };
+    return { pendingTransactions, completedTransactions, totalCompletedIncome: completedSum };
   }, [incomeTransactions]);
+  
+  const totalIncomeInDisplayCurrency = totalCompletedIncome * conversionRate;
+  const incomeGoalInDisplayCurrency = (incomeGoal || 0) * conversionRate;
+  const incomePercentage = incomeGoalInDisplayCurrency > 0 ? (totalIncomeInDisplayCurrency / incomeGoalInDisplayCurrency) * 100 : 0;
 
   const validateField = (fieldName: 'name' | 'amount', value: string): string | undefined => {
     switch (fieldName) {
@@ -106,6 +119,16 @@ export const IncomeView: React.FC<IncomeViewProps> = ({
     setSourceAmount('');
     setSourceCategory(INCOME_CATEGORIES[0].id);
     setErrors({});
+  };
+  
+  const handleSaveIncomeGoal = () => {
+    const goalValue = parseFloat(newIncomeGoal);
+    if (!isNaN(goalValue) && goalValue >= 0) {
+        // Convert back to base currency before saving
+        const baseCurrencyGoal = conversionRate !== 0 ? goalValue / conversionRate : goalValue;
+        onUpdateIncomeGoal(baseCurrencyGoal);
+        setIsEditingIncomeGoal(false);
+    }
   };
 
   const handleQuickAddTransaction = (source: IncomeSource) => {
@@ -157,7 +180,7 @@ export const IncomeView: React.FC<IncomeViewProps> = ({
     <div className="space-y-6">
       {isConverting && (
         <div className="bg-sky-900/50 border border-sky-700 text-sky-300 px-4 py-3 rounded-lg flex items-center" role="alert">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="block sm:inline">
@@ -165,6 +188,67 @@ export const IncomeView: React.FC<IncomeViewProps> = ({
           </span>
         </div>
       )}
+      
+      {/* Income Goal Section */}
+      <div className="glass-card bg-opacity-30 p-4">
+        <div className="flex justify-between items-center">
+            <h3 className="text-lg font-bold text-white">Monthly Income Goal</h3>
+            {!isEditingIncomeGoal && (
+                <button
+                    onClick={() => {
+                        setIsEditingIncomeGoal(true);
+                        setNewIncomeGoal(String(incomeGoalInDisplayCurrency.toFixed(2).replace('.00', '') || ''));
+                    }}
+                    className="text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-1 px-2 rounded-lg transition-colors"
+                >
+                    {incomeGoal && incomeGoal > 0 ? 'Edit Goal' : 'Set Goal'}
+                </button>
+            )}
+        </div>
+
+        {isEditingIncomeGoal ? (
+            <div className="flex items-center gap-2 mt-3">
+                <div className="relative flex-grow">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{displayCurrency.symbol}</span>
+                    <input
+                        type="number"
+                        value={newIncomeGoal}
+                        onChange={(e) => setNewIncomeGoal(e.target.value)}
+                        placeholder="Set income goal"
+                        className="w-full pl-8 pr-2 py-1.5 bg-slate-700/50 text-white border border-slate-600 rounded-md focus:ring-1 focus:ring-sky-500 outline-none"
+                        aria-label="Monthly income goal"
+                    />
+                </div>
+                <button onClick={handleSaveIncomeGoal} className="p-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition-colors" aria-label="Save income goal">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                </button>
+                 <button onClick={() => setIsEditingIncomeGoal(false)} className="p-2 rounded-md bg-slate-600/50 hover:bg-slate-500/50 text-white transition-colors" aria-label="Cancel editing income goal">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                </button>
+            </div>
+        ) : (
+            <div className="mt-2 space-y-2">
+                <p className="text-2xl font-bold text-green-400">
+                    {`${displayCurrency.symbol}${totalIncomeInDisplayCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    {incomeGoal && incomeGoal > 0 && (
+                       <span className="text-lg text-slate-400 font-semibold"> / {`${displayCurrency.symbol}${incomeGoalInDisplayCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                    )}
+                </p>
+                {incomeGoal && incomeGoal > 0 ? (
+                    <div className="w-full bg-slate-700/50 rounded-full h-2.5">
+                        <div
+                            className="bg-green-500 h-2.5 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(incomePercentage, 100)}%` }}
+                        ></div>
+                    </div>
+                ) : (
+                     <p className="text-xs text-slate-500">
+                        No goal set.
+                    </p>
+                )}
+            </div>
+        )}
+      </div>
 
       {/* Form to add new income source */}
       <div>
@@ -322,14 +406,14 @@ export const IncomeView: React.FC<IncomeViewProps> = ({
                     </div>
                     <div className="flex items-center">
                         <button onClick={() => handleQuickAddTransaction(source)} aria-label={`Add income from ${source.name}`} className="bg-green-500/20 hover:bg-green-500/40 text-green-300 font-bold p-2 rounded-full transition-all transform scale-100 group-hover:scale-110">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         </button>
                         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-1">
                             <button onClick={() => handleEditClick(source)} aria-label={`Edit source ${source.name}`} className="text-slate-400 hover:text-sky-400 p-2 rounded-full hover:bg-sky-500/20 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
                             </button>
                             <button onClick={() => handleDeleteWithConfirmation(source.id, source.name)} aria-label={`Delete source ${source.name}`} className="text-slate-400 hover:text-red-400 p-2 rounded-full hover:bg-red-500/20 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                             </button>
                         </div>
                     </div>

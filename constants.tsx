@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { Currency, Category, IncomeCategory } from './types';
 
@@ -48,6 +49,7 @@ const OtherIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) 
 export const INCOME_CATEGORIES: IncomeCategory[] = [
     { id: 'private-lesson', name: 'Özel Ders' },
     { id: 'italy-consultancy', name: 'İtalya Danışmanlık' },
+    { id: 'refunds', name: 'Refunds' },
     { id: 'other', name: 'Other' },
 ];
 

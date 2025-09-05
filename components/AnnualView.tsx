@@ -1,12 +1,16 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
+import type { User } from 'firebase/auth';
 import type { MonthlyData, Currency } from '../types';
 import { CATEGORIES, INCOME_CATEGORIES } from '../constants';
+import { ThemeToggle } from './ThemeToggle';
 
 interface AnnualViewProps {
+  user: User;
   year: number;
   annualData: MonthlyData[];
   onBackToDashboard: () => void;
+  onSignOut: () => void;
   displayCurrency: Currency;
   conversionRate: number;
   allAvailableYears: number[];
@@ -58,7 +62,7 @@ const formatCurrency = (value: number, currency: Currency) => {
   return `${currency.symbol}${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBackToDashboard, displayCurrency, conversionRate, allAvailableYears, onYearChange }) => {
+export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, onBackToDashboard, onSignOut, displayCurrency, conversionRate, allAvailableYears, onYearChange }) => {
   const { totalIncome, totalExpenses, monthlyOverviewData } = useMemo(() => {
     let aggIncome = 0;
     let aggExpenses = 0;
@@ -270,7 +274,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div className="flex items-center gap-4">
             <button onClick={onBackToDashboard} className="flex items-center gap-2 text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
                 <span>Dashboard</span>
             </button>
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-violet-500">
@@ -279,6 +283,12 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
         </div>
         
         <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-3">
+                <p className="hidden md:block text-sm text-slate-400 truncate max-w-[200px]" title={user.email || 'User'}>
+                    {user.email}
+                </p>
+                <button onClick={onSignOut} className="text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">Sign Out</button>
+            </div>
             <div className="flex items-center space-x-2">
                 <label htmlFor="year-selector" className="text-sm text-slate-400">View Year:</label>
                  <button 
@@ -287,7 +297,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
                     className="p-2 rounded-md bg-slate-700/80 hover:bg-slate-600/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     aria-label="Previous year"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                 </button>
                 <select
                     id="year-selector"
@@ -306,13 +316,14 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
                     className="p-2 rounded-md bg-slate-700/80 hover:bg-slate-600/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     aria-label="Next year"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
             <button onClick={handleExport} className="text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Export
             </button>
+            <ThemeToggle />
         </div>
       </header>
       <main className="space-y-6">
@@ -340,7 +351,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
         </div>
 
         <div className="glass-card p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Monthly Financial Overview</h2>
+          <h2 className="text-xl font-bold mb-4">Monthly Financial Overview</h2>
           <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyOverviewData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -369,7 +380,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
         </div>
 
         <div className="glass-card p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Cumulative Income Trend</h2>
+            <h2 className="text-xl font-bold mb-4">Cumulative Income Trend</h2>
             <div className="w-full h-80">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={cumulativeIncomeTrendData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -383,13 +394,13 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
                         <XAxis 
                             dataKey="dayLabel" 
                             stroke="#94a3b8" 
-                            tick={{ fill: '#cbd5e1', fontSize: 12 }} 
+                            tick={{ fill: 'var(--text-primary)', fontSize: 12 }} 
                             tickFormatter={(tick) => tick.endsWith(' 1') ? tick.split(' ')[0] : ''}
                             interval="preserveStartEnd"
                         />
                         <YAxis 
                             stroke="#94a3b8" 
-                            tick={{ fill: '#cbd5e1' }} 
+                            tick={{ fill: 'var(--text-primary)' }} 
                             tickFormatter={(value) => `${displayCurrency.symbol}${Number(value).toLocaleString(undefined, { notation: 'compact' })}`}
                         />
                         <Tooltip 
@@ -403,7 +414,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
         </div>
 
         <div className="glass-card p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Yearly Expense Breakdown</h2>
+          <h2 className="text-xl font-bold mb-4">Yearly Expense Breakdown</h2>
           {yearlyCategoryData.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div className="w-full h-72">
@@ -436,7 +447,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
                                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap[item.color] || '#9ca3af' }}></span>
                                     <span className="text-slate-300">{item.name}</span>
                                 </div>
-                                <span className="font-medium text-white">
+                                <span className="font-medium">
                                     {formatCurrency(item.total, displayCurrency)}
                                 </span>
                             </div>
@@ -452,7 +463,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
                 <hr className="border-slate-700 my-4"/>
                 <div className="flex justify-between items-center text-base font-bold">
                     <span className="text-slate-200">Grand Total</span>
-                    <span className="text-white">
+                    <span>
                         {formatCurrency(yearlyGrandTotal, displayCurrency)}
                     </span>
                 </div>
@@ -466,7 +477,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ year, annualData, onBack
         </div>
 
         <div className="glass-card p-6">
-          <h2 className="text-xl font-bold text-white mb-6">Year In Review</h2>
+          <h2 className="text-xl font-bold mb-6">Year In Review</h2>
             <div className="space-y-4">
               <div className="flex justify-between items-baseline p-4 bg-slate-800/50 rounded-lg">
                 <span className="text-lg text-slate-300">Total Income</span>
