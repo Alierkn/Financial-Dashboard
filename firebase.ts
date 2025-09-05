@@ -3,66 +3,61 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 // =================================================================================
-// IMPORTANT: Firebase Configuration
+// ÖNEMLİ: Firebase Yapılandırması
 // =================================================================================
-// This application is now configured to use environment variables for Firebase
-// credentials. This is a more secure and standard practice than hardcoding
-// values in the source code.
+// Bu uygulamayı kullanmak için kendi Firebase projenizi kurmanız ve
+// yapılandırma ayrıntılarını aşağıya doldurmanız gerekir.
 //
-// You must set the following environment variables in your deployment environment:
-// - FIREBASE_API_KEY
-// - FIREBASE_AUTH_DOMAIN
-// - FIREBASE_PROJECT_ID
-// - FIREBASE_STORAGE_BUCKET
-// - FIREBASE_MESSAGING_SENDER_ID
-// - FIREBASE_APP_ID
-// - FIREBASE_MEASUREMENT_ID
-//
-// These values can be found in your Firebase project's settings.
+// 1. Firebase Konsolu'na gidin: https://console.firebase.google.com/
+// 2. Yeni bir proje oluşturun veya mevcut bir projeyi seçin.
+// 3. Proje ayarlarına gidin (dişli simgesine tıklayın).
+// 4. "Genel" sekmesinde, "Uygulamalarınız" altında, yeni bir Web uygulaması oluşturun
+//    veya mevcut olanı bulun.
+// 5. `firebaseConfig` nesnesini bulun ve değerlerini buraya kopyalayın.
 // =================================================================================
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSy...YOUR_API_KEY",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "your-sender-id",
+  appId: "1:your-sender-id:web:your-app-id",
+  measurementId: "G-YOUR_MEASUREMENT_ID"
 };
 
 
-// This check determines if the Firebase project ID is provided via environment variables.
-// The app will show a setup screen until this is configured in the environment.
-export const isFirebaseConfigured = !!firebaseConfig.projectId;
+// Bu kontrol, Firebase yapılandırmasının doldurulup doldurulmadığını belirler.
+// Bu değerler değiştirilene kadar uygulama bir kurulum ekranı gösterecektir.
+export const isFirebaseConfigured = !!firebaseConfig.projectId && firebaseConfig.projectId !== 'your-project-id';
 
-// Use `let` to allow variable initialization within the conditional block.
+// Değişkenin koşullu blok içinde başlatılmasına izin vermek için `let` kullanın.
 let auth: firebase.auth.Auth | null = null;
 let googleProvider: firebase.auth.GoogleAuthProvider | null = null;
 let db: firebase.firestore.Firestore | null = null;
 
-// Initialize Firebase only if it's configured and hasn't been initialized yet
+// Firebase'i yalnızca yapılandırılmışsa ve henüz başlatılmamışsa başlatın
 if (isFirebaseConfigured && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 
-  // Initialize services
+  // Hizmetleri başlatın
   auth = firebase.auth();
   googleProvider = new firebase.auth.GoogleAuthProvider();
   db = firebase.firestore();
 
-  // --- FIX: Explicitly set authentication persistence ---
-  // This is the core fix for data not being saved between sessions.
-  // By default, Firebase should persist the session, but sometimes this can fail
-  // in certain environments. Explicitly setting persistence to `LOCAL` ensures
-  // that the user remains logged in after closing the browser window or tab.
-  // When they return, the app will recognize them and load their saved data,
-  // preventing the "start from scratch" issue.
+  // --- DÜZELTME: Oturum kalıcılığını açıkça ayarlayın ---
+  // Bu, oturumlar arasında verilerin kaydedilmemesi sorununun temel çözümüdür.
+  // Varsayılan olarak, Firebase oturumu sürdürmelidir, ancak bazen bu belirli
+  // ortamlarda başarısız olabilir. Kalıcılığı açıkça `LOCAL` olarak ayarlamak,
+  // kullanıcının tarayıcı penceresini veya sekmesini kapattıktan sonra oturumunun
+  // açık kalmasını sağlar. Geri döndüklerinde, uygulama onları tanıyacak ve
+  // kayıtlı verilerini yükleyerek "sıfırdan başlama" sorununu önleyecektir.
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .catch((error) => {
-      // This error can happen in restrictive environments (e.g., private browsing,
-      // disabled third-party cookies). Logging it helps debug if persistence fails.
+      // Bu hata kısıtlayıcı ortamlarda (ör. özel tarama,
+      // devre dışı bırakılmış üçüncü taraf çerezleri) meydana gelebilir. Bunu günlüğe kaydetmek, kalıcılık başarısız olursa hata ayıklamaya yardımcı olur.
       console.error("Firebase Auth: Could not set session persistence.", error);
     });
 }
 
-// Export the initialized services. The app's logic handles the null case.
+// Başlatılan hizmetleri dışa aktarın. Uygulamanın mantığı null durumu yönetir.
 export { auth, googleProvider, db, firebase };

@@ -189,29 +189,37 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       if (!expenseData.isInstallment) {
         const newExpense: Expense = {
             id: `${now.getTime()}-${Math.random().toString(36).substring(2, 9)}`,
+            amount: expenseData.amount,
+            description: expenseData.description,
+            category: expenseData.category,
+            paymentMethod: expenseData.paymentMethod,
             date: now.toISOString(),
             status: 'paid',
-            ...expenseData
         };
         await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) });
       } else {
         const installmentId = `${now.getTime()}-${Math.random().toString(36).substring(2, 9)}`;
         const amountPerInstallment = expenseData.amount / expenseData.installments;
         
-        const newExpenses: Expense[] = Array.from({ length: expenseData.installments }, (_, i) => ({
-            id: `${now.getTime()}-${i}-${Math.random().toString(36).substring(2, 9)}`,
-            date: now.toISOString(),
-            amount: amountPerInstallment,
-            description: expenseData.description,
-            category: expenseData.category,
-            paymentMethod: expenseData.paymentMethod,
-            status: i === 0 ? 'paid' : 'pending',
-            installmentDetails: {
-                installmentId,
-                current: i + 1,
-                total: expenseData.installments,
-            }
-        }));
+        const newExpenses: Expense[] = Array.from({ length: expenseData.installments }, (_, i) => {
+            const installmentDate = new Date(now);
+            installmentDate.setMonth(now.getMonth() + i);
+
+            return {
+                id: `${now.getTime()}-${i}-${Math.random().toString(36).substring(2, 9)}`,
+                amount: amountPerInstallment,
+                description: expenseData.description,
+                category: expenseData.category,
+                paymentMethod: expenseData.paymentMethod,
+                date: installmentDate.toISOString(),
+                status: i === 0 ? 'paid' : 'pending',
+                installmentDetails: {
+                    installmentId,
+                    current: i + 1,
+                    total: expenseData.installments,
+                }
+            };
+        });
         await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(...newExpenses) });
       }
       addToast(t('successExpenseAdded'), 'success');
