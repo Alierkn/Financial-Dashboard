@@ -27,9 +27,10 @@ const firebaseConfig = {
   apiKey: "AIzaSyCSU0uhNCAiQvyvLM5uZxvOJi7TN34H5hQ",
   authDomain: "financialdashboard-4b23e.firebaseapp.com",
   projectId: "financialdashboard-4b23e",
-  storageBucket: "financialdashboard-4b23e.appspot.com",
+  storageBucket: "financialdashboard-4b23e.firebasestorage.app",
   messagingSenderId: "734257592555",
-  appId: "1:734257592555:web:c7bff06aef0de1361f26ae"
+  appId: "1:734257592555:web:c7bff06aef0de1361f26ae",
+  measurementId: "G-LMELYRSPNE"
 };
 
 

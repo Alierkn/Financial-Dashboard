@@ -51,7 +51,13 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   useEffect(() => {
     const handleError = (error: Error, type: string) => {
         console.error(`Error fetching ${type}:`, error);
-        setFirestoreError(`Could not load your ${type}. Please check your connection and try again.`);
+        // Ad-blockers often cause generic network errors.
+        // The "Failed to fetch" or "Network request failed" messages are common indicators.
+        if (error.message.toLowerCase().includes('network') || error.message.toLowerCase().includes('fetch')) {
+            setFirestoreError(`Could not load your ${type}. This may be due to a browser extension (like an ad-blocker) or a network issue. Please try disabling extensions and check your internet connection.`);
+        } else {
+            setFirestoreError(`Could not load your ${type}. Please check your connection and try again. Error: ${error.message}`);
+        }
         setLoading(false);
     };
 
