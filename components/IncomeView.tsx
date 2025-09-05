@@ -17,7 +17,6 @@ interface IncomeViewProps {
   onUpdateTransactionStatus: (id: string, status: 'completed') => Promise<void>;
   conversionRate: number;
   incomeGoal: number | undefined;
-  onUpdateIncomeGoal: (goal: number) => Promise<boolean>;
   isSubmitting: boolean;
   deletingSourceId: string | null;
   deletingTransactionId: string | null;
@@ -41,7 +40,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
     incomeSources, incomeTransactions, baseCurrency, displayCurrency,
     onAddSource, onDeleteSource, onUpdateSource, onAddTransaction,
     onDeleteTransaction, onUpdateTransactionStatus, conversionRate,
-    incomeGoal, onUpdateIncomeGoal, isSubmitting, deletingSourceId, deletingTransactionId
+    incomeGoal, isSubmitting, deletingSourceId, deletingTransactionId
   } = props;
     
   const [sourceName, setSourceName] = useState('');
@@ -57,23 +56,16 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
   const [editFormData, setEditFormData] = useState<{ name: string, amount: string, category: IncomeCategoryId }>({ name: '', amount: '', category: INCOME_CATEGORIES[0].id});
   const [editErrors, setEditErrors] = useState<{ name?: string; amount?: string }>({});
   
-  const [isEditingIncomeGoal, setIsEditingIncomeGoal] = useState(false);
-  const [newIncomeGoal, setNewIncomeGoal] = useState('');
   const { t } = useLanguage();
 
-  const { pendingTransactions, completedTransactions, totalCompletedIncome } = useMemo(() => {
-    const pending: IncomeTransaction[] = [];
-    const completed: IncomeTransaction[] = [];
+  const { totalCompletedIncome } = useMemo(() => {
     let completedSum = 0;
     incomeTransactions.forEach(t => {
-      if (t.status === 'pending') {
-        pending.push(t);
-      } else {
-        completed.push(t);
+      if (t.status === 'completed') {
         completedSum += t.amount;
       }
     });
-    return { pendingTransactions, completedTransactions, totalCompletedIncome: completedSum };
+    return { totalCompletedIncome: completedSum };
   }, [incomeTransactions]);
   
   const totalIncomeInDisplayCurrency = totalCompletedIncome * conversionRate;
@@ -109,15 +101,6 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
         setSourceAmount('');
         setSourceCategory(INCOME_CATEGORIES[0].id);
         setErrors({});
-    }
-  };
-  
-  const handleSaveIncomeGoal = async () => {
-    const goalValue = parseFloat(newIncomeGoal);
-    if (!isNaN(goalValue) && goalValue >= 0) {
-        const baseCurrencyGoal = conversionRate !== 0 ? goalValue / conversionRate : goalValue;
-        const success = await onUpdateIncomeGoal(baseCurrencyGoal);
-        if (success) setIsEditingIncomeGoal(false);
     }
   };
 
@@ -159,6 +142,19 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
       onDeleteSource(id);
     }
   };
+  
+  const { pendingTransactions, completedTransactions } = useMemo(() => {
+    const pending: IncomeTransaction[] = [];
+    const completed: IncomeTransaction[] = [];
+    incomeTransactions.forEach(t => {
+      if (t.status === 'pending') {
+        pending.push(t);
+      } else {
+        completed.push(t);
+      }
+    });
+    return { pendingTransactions, completedTransactions };
+  }, [incomeTransactions]);
 
   const isConverting = baseCurrency.code !== displayCurrency.code;
 
@@ -176,21 +172,19 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
       <div className="glass-card bg-opacity-30 p-4">
         <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold text-white">{t('monthlyIncomeGoal')}</h3>
-            {!isEditingIncomeGoal && (<button onClick={() => { setIsEditingIncomeGoal(true); setNewIncomeGoal(String(incomeGoalInDisplayCurrency.toFixed(2).replace('.00', '') || '')); }} className="text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-1 px-2 rounded-lg transition-colors">{incomeGoal && incomeGoal > 0 ? t('editGoal') : t('setGoal')}</button>)}
         </div>
-
-        {isEditingIncomeGoal ? (
-            <div className="flex items-center gap-2 mt-3">
-                <div className="relative flex-grow"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{displayCurrency.symbol}</span><input type="number" value={newIncomeGoal} onChange={(e) => setNewIncomeGoal(e.target.value)} placeholder={t('setIncomeGoal')} className="w-full pl-8 pr-2 py-1.5 bg-slate-700/50 text-white border border-slate-600 rounded-md focus:ring-1 focus:ring-sky-500 outline-none" aria-label={t('monthlyIncomeGoal')} /></div>
-                <button onClick={handleSaveIncomeGoal} className="p-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition-colors disabled:opacity-50" aria-label={t('saveIncomeGoal')} disabled={isSubmitting}>{isSubmitting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}</button>
-                 <button onClick={() => setIsEditingIncomeGoal(false)} className="p-2 rounded-md bg-slate-600/50 hover:bg-slate-500/50 text-white transition-colors" aria-label={t('cancelEditIncomeGoal')}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg></button>
-            </div>
-        ) : (
-            <div className="mt-2 space-y-2">
-                <p className="text-2xl font-bold text-green-400">{`${displayCurrency.symbol}${totalIncomeInDisplayCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${incomeGoal && incomeGoal > 0 ? ` / ${displayCurrency.symbol}${incomeGoalInDisplayCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}`}</p>
-                {incomeGoal && incomeGoal > 0 ? (<div className="w-full bg-slate-700/50 rounded-full h-2.5"><div className="bg-green-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(incomePercentage, 100)}%` }}></div></div>) : (<p className="text-xs text-slate-500">{t('noGoalSet')}</p>)}
-            </div>
-        )}
+        <div className="mt-2 space-y-2">
+            <p className="text-2xl font-bold text-green-400">
+                {`${displayCurrency.symbol}${totalIncomeInDisplayCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${incomeGoal && incomeGoal > 0 ? ` / ${displayCurrency.symbol}${incomeGoalInDisplayCurrency.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}`}
+            </p>
+            {incomeGoal && incomeGoal > 0 ? (
+                <div className="w-full bg-slate-700/50 rounded-full h-2.5">
+                    <div className="bg-green-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(incomePercentage, 100)}%` }}></div>
+                </div>
+            ) : (
+                <p className="text-xs text-slate-500">{t('noGoalSet')}</p>
+            )}
+        </div>
       </div>
 
       <div>

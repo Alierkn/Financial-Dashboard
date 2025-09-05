@@ -103,8 +103,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, monthlyData, onStart
           </div>
         ) : (
           years.map((year, index) => (
-            <div key={year} className="glass-card p-4 sm:p-6 animate-fade-in" style={{ animationDelay: `${(index + 1) * 100}ms`}}>
-              <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleYear(year)}>
+            <div key={year} className="glass-card p-4 sm:p-6 animate-fade-in group" style={{ animationDelay: `${(index + 1) * 100}ms`}}>
+              <div className="flex justify-between items-center cursor-pointer rounded-lg p-2 -m-2 transition-colors group-hover:bg-slate-800/40" onClick={() => toggleYear(year)}>
                 <div className="flex items-center gap-4">
                     <h2 className="text-2xl font-bold">{year}</h2>
                     <ChevronIcon expanded={!!expandedYears[year]} />

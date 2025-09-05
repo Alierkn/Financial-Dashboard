@@ -25,10 +25,11 @@ const translations = {
     errorOccurred: 'An error occurred.',
     
     // Language Toggle
-    switchToEnglish: 'Switch to English',
-    switchToTurkish: 'Switch to Turkish',
-    switchToItalian: 'Switch to Italian',
-    switchToArabic: 'Switch to Arabic',
+    changeLanguage: 'Change language, current is {{currentLanguage}}',
+    language_en: 'English',
+    language_tr: 'Türkçe',
+    language_it: 'Italiano',
+    language_ar: 'العربية',
 
     // Dashboard
     financialDashboard: 'Financial Dashboard',
@@ -120,6 +121,9 @@ const translations = {
     errorInvalidAmount: 'Please enter a valid, positive amount.',
     errorEmptyDescription: 'Description cannot be empty.',
     errorSelectCategory: 'Please select a category.',
+    payInInstallments: 'Pay in installments',
+    numberOfInstallments: 'Number of Installments',
+    errorInvalidInstallments: 'Please enter a valid number of installments (minimum 2).',
 
     // Expense List
     recentExpenses: 'Recent Expenses',
@@ -129,6 +133,9 @@ const translations = {
     noExpensesMatchSearch: 'No expenses match your search.',
     paidBy: 'Paid by {{method}}',
     deleteExpenseFor: 'Delete expense for {{description}}',
+    installmentLabel: 'Installment {{current}}/{{total}}',
+    confirmPayment: 'Confirm Payment',
+    paid: 'Paid',
 
     // Category View
     spendingByCategory: 'Spending by Category',
@@ -239,6 +246,8 @@ const translations = {
     errorSaveColors: 'Failed to save category colors.',
     successMonthDeleted: 'Monthly budget has been deleted.',
     errorDeleteMonth: 'Failed to delete month.',
+    successPaymentConfirmed: 'Payment confirmed successfully!',
+    errorConfirmingPayment: 'Error confirming payment.',
     
     // Categories
     category_food: 'Food',
@@ -276,10 +285,11 @@ const translations = {
     errorOccurred: 'Bir hata oluştu.',
     
     // Language Toggle
-    switchToEnglish: 'İngilizce\'ye Geç',
-    switchToTurkish: 'Türkçe\'ye Geç',
-    switchToItalian: 'İtalyanca\'ya Geç',
-    switchToArabic: 'Arapça\'ya Geç',
+    changeLanguage: 'Dili değiştir, mevcut dil {{currentLanguage}}',
+    language_en: 'English',
+    language_tr: 'Türkçe',
+    language_it: 'Italiano',
+    language_ar: 'العربية',
 
     // Dashboard
     financialDashboard: 'Finansal Pano',
@@ -371,6 +381,9 @@ const translations = {
     errorInvalidAmount: 'Lütfen geçerli, pozitif bir tutar girin.',
     errorEmptyDescription: 'Açıklama boş olamaz.',
     errorSelectCategory: 'Lütfen bir kategori seçin.',
+    payInInstallments: 'Taksitli Öde',
+    numberOfInstallments: 'Taksit Sayısı',
+    errorInvalidInstallments: 'Lütfen geçerli bir taksit sayısı girin (en az 2).',
 
     // Expense List
     recentExpenses: 'Son Harcamalar',
@@ -380,6 +393,9 @@ const translations = {
     noExpensesMatchSearch: 'Aramanızla eşleşen harcama bulunamadı.',
     paidBy: 'Ödeme: {{method}}',
     deleteExpenseFor: '{{description}} harcamasını sil',
+    installmentLabel: '{{current}}. Taksit / {{total}}',
+    confirmPayment: 'Ödemeyi Onayla',
+    paid: 'Ödendi',
 
     // Category View
     spendingByCategory: 'Kategoriye Göre Harcama',
@@ -490,6 +506,8 @@ const translations = {
     errorSaveColors: 'Kategori renkleri kaydedilemedi.',
     successMonthDeleted: 'Aylık bütçe silindi.',
     errorDeleteMonth: 'Aylık bütçe silinemedi.',
+    successPaymentConfirmed: 'Ödeme başarıyla onaylandı!',
+    errorConfirmingPayment: 'Ödeme onaylanırken bir hata oluştu.',
 
     // Categories
     category_food: 'Gıda',
@@ -527,10 +545,11 @@ const translations = {
     errorOccurred: 'Si è verificato un errore.',
     
     // Language Toggle
-    switchToEnglish: 'Passa all\'Inglese',
-    switchToTurkish: 'Passa al Turco',
-    switchToItalian: 'Passa all\'Italiano',
-    switchToArabic: 'Passa all\'Arabo',
+    changeLanguage: 'Cambia lingua, corrente è {{currentLanguage}}',
+    language_en: 'English',
+    language_tr: 'Türkçe',
+    language_it: 'Italiano',
+    language_ar: 'العربية',
 
     // Dashboard
     financialDashboard: 'Dashboard Finanziaria',
@@ -622,6 +641,9 @@ const translations = {
     errorInvalidAmount: 'Inserisci un importo valido e positivo.',
     errorEmptyDescription: 'La descrizione non può essere vuota.',
     errorSelectCategory: 'Seleziona una categoria.',
+    payInInstallments: 'Paga a rate',
+    numberOfInstallments: 'Numero di rate',
+    errorInvalidInstallments: 'Inserisci un numero di rate valido (minimo 2).',
 
     // Expense List
     recentExpenses: 'Spese Recenti',
@@ -631,6 +653,9 @@ const translations = {
     noExpensesMatchSearch: 'Nessuna spesa corrisponde alla tua ricerca.',
     paidBy: 'Pagato con {{method}}',
     deleteExpenseFor: 'Elimina spesa per {{description}}',
+    installmentLabel: 'Rata {{current}}/{{total}}',
+    confirmPayment: 'Conferma Pagamento',
+    paid: 'Pagato',
 
     // Category View
     spendingByCategory: 'Spesa per Categoria',
@@ -741,6 +766,8 @@ const translations = {
     errorSaveColors: 'Salvataggio colori delle categorie non riuscito.',
     successMonthDeleted: 'Il budget mensile è stato eliminato.',
     errorDeleteMonth: 'Eliminazione del mese non riuscita.',
+    successPaymentConfirmed: 'Pagamento confermato con successo!',
+    errorConfirmingPayment: 'Errore durante la conferma del pagamento.',
     
     // Categories
     category_food: 'Cibo',
@@ -778,10 +805,11 @@ const translations = {
     errorOccurred: 'حدث خطأ ما.',
     
     // Language Toggle
-    switchToEnglish: 'التبديل إلى الإنجليزية',
-    switchToTurkish: 'التبديل إلى التركية',
-    switchToItalian: 'التبديل إلى الإيطالية',
-    switchToArabic: 'التبديل إلى العربية',
+    changeLanguage: 'تغيير اللغة، الحالية هي {{currentLanguage}}',
+    language_en: 'English',
+    language_tr: 'Türkçe',
+    language_it: 'Italiano',
+    language_ar: 'العربية',
 
     // Dashboard
     financialDashboard: 'لوحة التحكم المالية',
@@ -873,6 +901,9 @@ const translations = {
     errorInvalidAmount: 'الرجاء إدخال مبلغ موجب صالح.',
     errorEmptyDescription: 'لا يمكن أن يكون الوصف فارغًا.',
     errorSelectCategory: 'الرجاء تحديد فئة.',
+    payInInstallments: 'الدفع بالأقساط',
+    numberOfInstallments: 'عدد الأقساط',
+    errorInvalidInstallments: 'الرجاء إدخال عدد صالح من الأقساط (2 كحد أدنى).',
 
     // Expense List
     recentExpenses: 'المصروفات الأخيرة',
@@ -882,6 +913,9 @@ const translations = {
     noExpensesMatchSearch: 'لا توجد مصروفات تطابق بحثك.',
     paidBy: 'تم الدفع بواسطة {{method}}',
     deleteExpenseFor: 'حذف مصروف لـ {{description}}',
+    installmentLabel: 'القسط {{current}}/{{total}}',
+    confirmPayment: 'تأكيد الدفع',
+    paid: 'مدفوع',
 
     // Category View
     spendingByCategory: 'الإنفاق حسب الفئة',
@@ -992,6 +1026,8 @@ const translations = {
     errorSaveColors: 'فشل في حفظ ألوان الفئات.',
     successMonthDeleted: 'تم حذف الميزانية الشهرية.',
     errorDeleteMonth: 'فشل في حذف الشهر.',
+    successPaymentConfirmed: 'تم تأكيد الدفع بنجاح!',
+    errorConfirmingPayment: 'خطأ في تأكيد الدفع.',
     
     // Categories
     category_food: 'طعام',
@@ -1026,8 +1062,9 @@ const monthsShortByLang: Record<Language, string[]> = {
 
 interface LanguageContextType {
   language: Language;
-  toggleLanguage: () => void;
-  t: (key: keyof typeof translations.en, options?: { [key: string]: string | number }) => string;
+  setLanguage: (lang: Language) => void;
+  availableLanguages: Language[];
+  t: (key: string, options?: { [key: string]: string | number }) => string;
   months: string[];
   monthsShort: string[];
 }
@@ -1036,16 +1073,10 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useLocalStorage<Language>('language', 'tr');
+  const availableLanguages: Language[] = ['en', 'tr', 'it', 'ar'];
 
-  const languages: Language[] = ['en', 'tr', 'it', 'ar'];
-  const toggleLanguage = () => {
-    const currentIndex = languages.indexOf(language);
-    const nextIndex = (currentIndex + 1) % languages.length;
-    setLanguage(languages[nextIndex]);
-  };
-
-  const t = (key: keyof typeof translations.en, options?: { [key: string]: string | number }) => {
-    let text = translations[language]?.[key] || translations.en[key];
+  const t = (key: string, options?: { [key: string]: string | number }) => {
+    let text = (translations[language] as any)?.[key] || (translations.en as any)[key] || key;
     if (options) {
       Object.entries(options).forEach(([optionKey, value]) => {
         text = text.replace(`{{${optionKey}}}`, String(value));
@@ -1056,7 +1087,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const value = {
     language,
-    toggleLanguage,
+    setLanguage,
+    availableLanguages,
     t,
     months: monthsByLang[language],
     monthsShort: monthsShortByLang[language]

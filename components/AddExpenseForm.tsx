@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 // FIX: Import CategoryId to strongly type the selected category state.
-import type { Expense, CategoryId } from '../types';
+import type { CategoryId } from '../types';
 import { CATEGORIES } from '../constants';
 import { useLanguage } from '../contexts/LanguageProvider';
 
 interface AddExpenseFormProps {
-  onAddExpense: (expense: Omit<Expense, 'id' | 'date'>) => Promise<boolean>;
+  onAddExpense: (expenseData: {
+    amount: number;
+    description: string;
+    category: CategoryId;
+    paymentMethod: 'cash' | 'credit-card';
+    isInstallment: boolean;
+    installments: number;
+  }) => Promise<boolean>;
   isSubmitting?: boolean;
 }
 
 export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, isSubmitting }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  // FIX: Use CategoryId type for selectedCategory state to match the Expense type.
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit-card'>('cash');
-  const [errors, setErrors] = useState<{ amount?: string; description?: string; category?: string }>({});
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installments, setInstallments] = useState('2');
+  const [errors, setErrors] = useState<{ amount?: string; description?: string; category?: string; installments?: string; }>({});
   const { t } = useLanguage();
 
-  const validateField = (name: 'amount' | 'description', value: string) => {
+  const validateField = (name: 'amount' | 'description' | 'installments', value: string) => {
     switch (name) {
       case 'amount':
         const amountValue = parseFloat(value);
@@ -31,6 +39,12 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
           return t('errorEmptyDescription');
         }
         break;
+      case 'installments':
+        const installmentsValue = parseInt(value, 10);
+        if (isNaN(installmentsValue) || installmentsValue < 2) {
+          return t('errorInvalidInstallments');
+        }
+        break;
       default:
         break;
     }
@@ -39,8 +53,8 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
   
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === 'amount' || name === 'description') {
-        const error = validateField(name, value);
+    if (name === 'amount' || name === 'description' || name === 'installments') {
+        const error = validateField(name as any, value);
         setErrors(prev => ({ ...prev, [name]: error }));
     }
   };
@@ -52,12 +66,14 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
     const amountError = validateField('amount', amount);
     const descriptionError = validateField('description', description);
     const categoryError = !selectedCategory ? t('errorSelectCategory') : undefined;
+    const installmentsError = isInstallment ? validateField('installments', installments) : undefined;
 
-    if (amountError || descriptionError || categoryError) {
+    if (amountError || descriptionError || categoryError || installmentsError) {
       setErrors({
         amount: amountError,
         description: descriptionError,
         category: categoryError,
+        installments: installmentsError,
       });
       return;
     }
@@ -67,6 +83,8 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
       description,
       category: selectedCategory!,
       paymentMethod,
+      isInstallment,
+      installments: isInstallment ? parseInt(installments, 10) : 1,
     });
 
     if (success) {
@@ -75,6 +93,8 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
       setDescription('');
       setSelectedCategory(null);
       setPaymentMethod('cash');
+      setIsInstallment(false);
+      setInstallments('2');
       setErrors({});
     }
   };
@@ -121,27 +141,58 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
           />
           {errors.description && <p id="description-error" className="text-red-400 text-sm mt-1">{errors.description}</p>}
         </div>
-        <div>
-          <p className="block text-sm font-medium text-slate-300 mb-2">{t('paymentMethod')}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('cash')}
-              className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'cash' ? 'bg-green-500/20 border-green-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span className="text-white">{t('cash')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('credit-card')}
-              className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'credit-card' ? 'bg-sky-500/20 border-sky-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-sky-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                <span className="text-white">{t('card')}</span>
-            </button>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="block text-sm font-medium text-slate-300 mb-2">{t('paymentMethod')}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cash')}
+                className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'cash' ? 'bg-green-500/20 border-green-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  <span className="text-white">{t('cash')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('credit-card')}
+                className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'credit-card' ? 'bg-sky-500/20 border-sky-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-sky-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                  <span className="text-white">{t('card')}</span>
+              </button>
+            </div>
+          </div>
+          <div>
+              <div className="flex items-center h-full pt-8">
+                  <input id="isInstallment" type="checkbox" checked={isInstallment} onChange={(e) => setIsInstallment(e.target.checked)} className="h-4 w-4 rounded border-slate-500 text-sky-500 focus:ring-sky-400 bg-slate-700"/>
+                  <label htmlFor="isInstallment" className="ml-2 block text-sm font-medium text-slate-300">{t('payInInstallments')}</label>
+              </div>
           </div>
         </div>
+        
+        {isInstallment && (
+            <div className="animate-fade-in">
+              <label htmlFor="installments" className="block text-sm font-medium text-slate-300 mb-1">{t('numberOfInstallments')}</label>
+              <input
+                id="installments"
+                name="installments"
+                type="number"
+                value={installments}
+                onChange={(e) => {
+                  setInstallments(e.target.value);
+                  if (errors.installments) setErrors(prev => ({...prev, installments: undefined}));
+                }}
+                onBlur={handleBlur}
+                min="2"
+                className={`w-full p-2 bg-slate-700/50 text-white border rounded-lg focus:ring-2 outline-none transition-colors ${errors.installments ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-sky-500 focus:border-sky-500'}`}
+                aria-invalid={!!errors.installments}
+                aria-describedby="installments-error"
+              />
+              {errors.installments && <p id="installments-error" className="text-red-400 text-sm mt-1">{errors.installments}</p>}
+            </div>
+        )}
+        
         <div>
           <p id="category-label" className="block text-sm font-medium text-slate-300 mb-2">{t('category')}</p>
           <div role="radiogroup" aria-labelledby="category-label" className="grid grid-cols-3 sm:grid-cols-4 gap-2">

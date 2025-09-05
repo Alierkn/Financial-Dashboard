@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { User } from 'firebase/auth';
-import type { MonthlyData, Expense, Currency, IncomeSource, IncomeTransaction } from '../types';
+import type { MonthlyData, Expense, Currency, IncomeSource, IncomeTransaction, CategoryId } from '../types';
 import { Summary } from './Summary';
 import { AddExpenseForm } from './AddExpenseForm';
 import { ExpenseList } from './ExpenseList';
@@ -26,8 +26,16 @@ interface MonthlyViewProps {
     user: User;
     monthData: MonthlyData;
     incomeSources: IncomeSource[];
-    onAddExpense: (expense: Omit<Expense, 'id' | 'date'>) => Promise<boolean>;
+    onAddExpense: (expenseData: {
+        amount: number;
+        description: string;
+        category: CategoryId;
+        paymentMethod: 'cash' | 'credit-card';
+        isInstallment: boolean;
+        installments: number;
+    }) => Promise<boolean>;
     onDeleteExpense: (id: string) => Promise<void>;
+    onConfirmPayment: (id: string) => Promise<void>;
     onAddIncomeSource: (source: Omit<IncomeSource, 'id'>) => Promise<boolean>;
     onDeleteIncomeSource: (id: string) => Promise<void>;
     onUpdateIncomeSource: (source: IncomeSource) => Promise<boolean>;
@@ -48,17 +56,18 @@ interface MonthlyViewProps {
     isSubmitting: boolean;
     submitError: string | null;
     deletingExpenseId: string | null;
+    confirmingPaymentId: string | null;
     deletingSourceId: string | null;
     deletingTransactionId: string | null;
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
     const { 
-        user, monthData, incomeSources, onAddExpense, onDeleteExpense,
+        user, monthData, incomeSources, onAddExpense, onDeleteExpense, onConfirmPayment,
         onAddIncomeSource, onDeleteIncomeSource, onUpdateIncomeSource, onAddIncomeTransaction, onDeleteIncomeTransaction,
         onUpdateIncomeTransactionStatus, onUpdateCategoryBudgets, onUpdateCategoryColors, categoryColors, onUpdateIncomeGoal,
         onBackToDashboard, onSignOut, displayCurrency, onDisplayCurrencyChange, conversionRate, ratesLoading, ratesError,
-        isSubmitting, submitError, deletingExpenseId, deletingSourceId, deletingTransactionId
+        isSubmitting, submitError, deletingExpenseId, confirmingPaymentId, deletingSourceId, deletingTransactionId
     } = props;
   
     const [activeView, setActiveView] = useState<View>(View.List);
@@ -78,7 +87,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
     const handleExport = () => {
         const expenseData = monthData.expenses.map(exp => ({
             date: new Date(exp.date).toISOString().slice(0, 10),
-            type: 'Expense',
+            type: `Expense (${t(exp.status)})`,
             description: exp.description,
             category: t(`category_${exp.category}`),
             amount: -exp.amount,
@@ -192,7 +201,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                         
                         <div className="max-h-[420px] overflow-y-auto pr-2">
                             {activeView === View.List ? (
-                                <ExpenseList expenses={monthData.expenses} currency={displayCurrency} onDeleteExpense={onDeleteExpense} conversionRate={conversionRate} deletingExpenseId={deletingExpenseId}/>
+                                <ExpenseList expenses={monthData.expenses} currency={displayCurrency} onDeleteExpense={onDeleteExpense} onConfirmPayment={onConfirmPayment} conversionRate={conversionRate} deletingExpenseId={deletingExpenseId} confirmingPaymentId={confirmingPaymentId} />
                             ) : activeView === View.Category ? (
                                 <CategoryView expenses={monthData.expenses} currency={displayCurrency} conversionRate={conversionRate} />
                             ) : activeView === View.Trend ? (
@@ -211,7 +220,6 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                                     onUpdateTransactionStatus={onUpdateIncomeTransactionStatus}
                                     conversionRate={conversionRate}
                                     incomeGoal={monthData.incomeGoal}
-                                    onUpdateIncomeGoal={onUpdateIncomeGoal}
                                     isSubmitting={isSubmitting}
                                     deletingSourceId={deletingSourceId}
                                     deletingTransactionId={deletingTransactionId}

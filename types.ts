@@ -30,6 +30,12 @@ export interface Expense {
   category: Category['id'];
   date: string;
   paymentMethod: 'cash' | 'credit-card';
+  status: 'paid' | 'pending';
+  installmentDetails?: {
+    installmentId: string;
+    current: number;
+    total: number;
+  };
 }
 
 export interface IncomeSource {

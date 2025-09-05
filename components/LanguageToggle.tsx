@@ -1,36 +1,57 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageProvider';
 
-// By defining this type, we ensure that we can only use valid translation keys.
-// This prevents typos and makes the code more robust.
-type AriaTranslationKey = 'switchToEnglish' | 'switchToTurkish' | 'switchToItalian' | 'switchToArabic';
-
 export const LanguageToggle: React.FC = () => {
-    const { language, toggleLanguage, t } = useLanguage();
+    const { language, setLanguage, availableLanguages, t } = useLanguage();
+    const [isOpen, setIsOpen] = useState(false);
 
-    // This configuration map keeps all language-specific toggle information in one place.
-    // Based on the *current* language, it determines:
-    // 1. `nextDisplay`: The text to show on the button (e.g., 'TR').
-    // 2. `ariaKey`: The translation key for the button's accessible name.
-    const configMap = {
-        en: { nextDisplay: 'TR', ariaKey: 'switchToTurkish' },
-        tr: { nextDisplay: 'IT', ariaKey: 'switchToItalian' },
-        it: { nextDisplay: 'AR', ariaKey: 'switchToArabic' },
-        ar: { nextDisplay: 'EN', ariaKey: 'switchToEnglish' },
+    const handleLanguageChange = (lang: 'en' | 'tr' | 'it' | 'ar') => {
+        setLanguage(lang);
+        setIsOpen(false);
     };
-    
-    // Select the correct configuration based on the current language
-    const currentConfig = configMap[language];
+
+    const currentLanguageName = t(`language_${language}`);
 
     return (
-        <button
-            onClick={toggleLanguage}
-            className="p-2.5 rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white transition-colors font-semibold w-12 text-center"
-            // The key for translation is now correctly looked up and passed to the t() function.
-            // This fixes the accessibility issue of untranslated labels for screen readers.
-            aria-label={t(currentConfig.ariaKey as AriaTranslationKey)}
+        <div 
+            className="relative"
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
         >
-            {currentConfig.nextDisplay}
-        </button>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2.5 rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white transition-colors font-semibold w-12 text-center"
+                aria-label={t('changeLanguage', { currentLanguage: currentLanguageName })}
+                aria-haspopup="true"
+                aria-expanded={isOpen}
+            >
+                {language.toUpperCase()}
+            </button>
+            {isOpen && (
+                <div 
+                    className="absolute top-full right-0 mt-2 w-40 glass-card p-2 animate-fade-in z-50"
+                    style={{ animationDuration: '200ms' }}
+                    role="menu"
+                >
+                    <ul className="space-y-1">
+                        {availableLanguages.map(lang => (
+                            <li key={lang}>
+                                <button
+                                    onClick={() => handleLanguageChange(lang)}
+                                    className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                                        language === lang 
+                                        ? 'bg-sky-500/30 text-white font-semibold' 
+                                        : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                                    }`}
+                                    role="menuitem"
+                                >
+                                    {t(`language_${lang}`)}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
     );
 };

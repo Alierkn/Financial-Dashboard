@@ -173,7 +173,9 @@ export const Summary: React.FC<SummaryProps> = ({
   const { t } = useLanguage();
 
   const totalSpent = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0) * conversionRate;
+    return expenses
+      .filter(expense => expense.status === 'paid')
+      .reduce((sum, expense) => sum + expense.amount, 0) * conversionRate;
   }, [expenses, conversionRate]);
 
   const totalIncome = useMemo(() => {
@@ -193,6 +195,7 @@ export const Summary: React.FC<SummaryProps> = ({
   const spendingByCategory = useMemo(() => {
     const spending: { [key: string]: number } = {};
     for (const expense of expenses) {
+      if (expense.status !== 'paid') continue;
       if (!spending[expense.category]) {
         spending[expense.category] = 0;
       }

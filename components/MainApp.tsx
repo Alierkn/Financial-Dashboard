@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { User } from 'firebase/auth';
 import { useExchangeRates } from '../hooks/useExchangeRates';
-import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData } from '../types';
+import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId } from '../types';
 import { CURRENCIES } from '../constants';
 import { Dashboard } from './Dashboard';
 import { MonthlySetup } from './MonthlySetup';
@@ -52,6 +52,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deletingMonthId, setDeletingMonthId] = useState<string | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
+  const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
 
@@ -177,15 +178,42 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     }
   };
 
-  const handleAddExpense = async (expense: Omit<Expense, 'id' | 'date'>): Promise<boolean> => {
+  const handleAddExpense = async (expenseData: { amount: number; description: string; category: CategoryId; paymentMethod: 'cash' | 'credit-card'; isInstallment: boolean; installments: number; }): Promise<boolean> => {
     if (!activeMonthId) {
         addToast(t('errorActiveMonth'), 'error');
         return false;
     }
     setIsSubmitting(true);
     try {
-      const newExpense: Expense = { ...expense, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, date: new Date().toISOString() };
-      await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) });
+      const now = new Date();
+      if (!expenseData.isInstallment) {
+        const newExpense: Expense = {
+            id: `${now.getTime()}-${Math.random().toString(36).substring(2, 9)}`,
+            date: now.toISOString(),
+            status: 'paid',
+            ...expenseData
+        };
+        await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) });
+      } else {
+        const installmentId = `${now.getTime()}-${Math.random().toString(36).substring(2, 9)}`;
+        const amountPerInstallment = expenseData.amount / expenseData.installments;
+        
+        const newExpenses: Expense[] = Array.from({ length: expenseData.installments }, (_, i) => ({
+            id: `${now.getTime()}-${i}-${Math.random().toString(36).substring(2, 9)}`,
+            date: now.toISOString(),
+            amount: amountPerInstallment,
+            description: expenseData.description,
+            category: expenseData.category,
+            paymentMethod: expenseData.paymentMethod,
+            status: i === 0 ? 'paid' : 'pending',
+            installmentDetails: {
+                installmentId,
+                current: i + 1,
+                total: expenseData.installments,
+            }
+        }));
+        await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(...newExpenses) });
+      }
       addToast(t('successExpenseAdded'), 'success');
       return true;
     } catch (error: any) { 
@@ -202,6 +230,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     try {
       await db!.runTransaction(async (transaction) => {
         const doc = await transaction.get(docRef);
+        if (!doc.exists) { throw new Error("Document does not exist!"); }
         const data = doc.data() as MonthlyData;
         const newExpenses = data.expenses.filter(e => e.id !== id);
         transaction.update(docRef, { expenses: newExpenses });
@@ -214,6 +243,28 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     finally { setDeletingExpenseId(null); }
   };
   
+  const handleConfirmInstallmentPayment = async (id: string) => {
+    if (!activeMonthId) return;
+    setConfirmingPaymentId(id);
+    const docRef = monthlyDataRef.doc(activeMonthId);
+    try {
+        await db!.runTransaction(async (transaction) => {
+            const doc = await transaction.get(docRef);
+            if (!doc.exists) { throw new Error("Document does not exist!"); }
+            const data = doc.data() as MonthlyData;
+            const newExpenses = data.expenses.map(e => 
+                e.id === id ? { ...e, status: 'paid' as 'paid', date: new Date().toISOString() } : e
+            );
+            transaction.update(docRef, { expenses: newExpenses });
+        });
+        addToast(t('successPaymentConfirmed'), 'success');
+    } catch (error: any) { 
+        addToast(error.message || t('errorConfirmingPayment'), 'error');
+        console.error("Error confirming payment:", error); 
+    }
+    finally { setConfirmingPaymentId(null); }
+  };
+
   const handleAddIncomeSource = async (source: Omit<IncomeSource, 'id'>): Promise<boolean> => {
     setIsSubmitting(true);
     try { 
@@ -281,6 +332,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     try {
         await db!.runTransaction(async (transaction) => {
             const doc = await transaction.get(docRef);
+            if (!doc.exists) { throw new Error("Document does not exist!"); }
             const data = doc.data() as MonthlyData;
             const newTransactions = data.incomeTransactions.filter(t => t.id !== id);
             transaction.update(docRef, { incomeTransactions: newTransactions });
@@ -299,6 +351,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     try {
         await db!.runTransaction(async (transaction) => {
             const doc = await transaction.get(docRef);
+            if (!doc.exists) { throw new Error("Document does not exist!"); }
             const data = doc.data() as MonthlyData;
             const newTransactions = data.incomeTransactions.map(t => t.id === id ? { ...t, status } : t);
             transaction.update(docRef, { incomeTransactions: newTransactions });
@@ -372,7 +425,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       case 'setup': return <MonthlySetup onSetup={handleSetupMonth} onCancel={handleBackToDashboard} existingMonths={allMonthlyData.map(d => d.id)} isSubmitting={isSubmitting} submissionError={submitError} />;
       case 'monthly':
         if (activeMonthData) {
-            return <MonthlyView {...{user, monthData: activeMonthData, incomeSources, onAddExpense: handleAddExpense, onDeleteExpense: handleDeleteExpense, onAddIncomeSource: handleAddIncomeSource, onDeleteIncomeSource: handleDeleteIncomeSource, onUpdateIncomeSource: handleUpdateIncomeSource, onAddIncomeTransaction: handleAddIncomeTransaction, onDeleteIncomeTransaction: handleDeleteIncomeTransaction, onUpdateIncomeTransactionStatus: handleUpdateIncomeTransactionStatus, onUpdateCategoryBudgets: handleUpdateCategoryBudgets, onUpdateCategoryColors: handleUpdateCategoryColors, categoryColors, onUpdateIncomeGoal: handleUpdateIncomeGoal, onBackToDashboard: handleBackToDashboard, onSignOut: handleSignOut, displayCurrency, onDisplayCurrencyChange: handleDisplayCurrencyChange, conversionRate, ratesLoading, ratesError, isSubmitting, submitError, deletingExpenseId, deletingSourceId, deletingTransactionId}} />;
+            return <MonthlyView {...{user, monthData: activeMonthData, incomeSources, onAddExpense: handleAddExpense, onDeleteExpense: handleDeleteExpense, onConfirmPayment: handleConfirmInstallmentPayment, onAddIncomeSource: handleAddIncomeSource, onDeleteIncomeSource: handleDeleteIncomeSource, onUpdateIncomeSource: handleUpdateIncomeSource, onAddIncomeTransaction: handleAddIncomeTransaction, onDeleteIncomeTransaction: handleDeleteIncomeTransaction, onUpdateIncomeTransactionStatus: handleUpdateIncomeTransactionStatus, onUpdateCategoryBudgets: handleUpdateCategoryBudgets, onUpdateCategoryColors: handleUpdateCategoryColors, categoryColors, onUpdateIncomeGoal: handleUpdateIncomeGoal, onBackToDashboard: handleBackToDashboard, onSignOut: handleSignOut, displayCurrency, onDisplayCurrencyChange: handleDisplayCurrencyChange, conversionRate, ratesLoading, ratesError, isSubmitting, submitError, deletingExpenseId, confirmingPaymentId, deletingSourceId, deletingTransactionId}} />;
         }
         handleBackToDashboard(); return null;
       case 'annual':
