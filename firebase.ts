@@ -3,38 +3,37 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 // =================================================================================
-// IMPORTANT: ACTION REQUIRED
+// IMPORTANT: Firebase Configuration
 // =================================================================================
-// To run this application, you need to set up your own Firebase project and
-// replace the placeholder configuration below with your project's credentials.
+// This application is now configured to use environment variables for Firebase
+// credentials. This is a more secure and standard practice than hardcoding
+// values in the source code.
 //
-// How to get your Firebase config:
-// 1. Go to the Firebase Console (https://console.firebase.google.com/).
-// 2. Create a new project or select an existing one.
-// 3. In your project, go to Project settings (click the gear icon).
-// 4. Under the "General" tab, scroll down to "Your apps".
-// 5. If you don't have a web app, create one.
-// 6. Find and copy the `firebaseConfig` object.
-// 7. Paste it here, replacing the placeholder object below.
-// 8. In the Firebase console, go to Authentication > Sign-in method and enable
-//    "Email/Password" and "Google" providers.
-// 9. Go to Firestore Database, create a database, and start in "test mode"
-//    for easy setup (you can secure it later with security rules).
+// You must set the following environment variables in your deployment environment:
+// - FIREBASE_API_KEY
+// - FIREBASE_AUTH_DOMAIN
+// - FIREBASE_PROJECT_ID
+// - FIREBASE_STORAGE_BUCKET
+// - FIREBASE_MESSAGING_SENDER_ID
+// - FIREBASE_APP_ID
+// - FIREBASE_MEASUREMENT_ID
+//
+// These values can be found in your Firebase project's settings.
 // =================================================================================
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id",
-  measurementId: "your-measurement-id"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
 
-// This check determines if the placeholder config is still being used.
-// The app will show a setup screen until this is replaced.
-export const isFirebaseConfigured = firebaseConfig.projectId !== "your-project-id";
+// This check determines if the Firebase project ID is provided via environment variables.
+// The app will show a setup screen until this is configured in the environment.
+export const isFirebaseConfigured = !!firebaseConfig.projectId;
 
 // Use `let` to allow variable initialization within the conditional block.
 let auth: firebase.auth.Auth | null = null;
