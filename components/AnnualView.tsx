@@ -158,23 +158,13 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, 
       id: category.id,
       name: category.name,
       total: spendingByCategory[category.id] || 0,
-      color: category.color.split('-')[1], // e.g., 'text-green-400' -> 'green'
+      color: category.hexColor,
       percentage: grandTotal > 0 ? (spendingByCategory[category.id] || 0) / grandTotal : 0,
     })).filter(data => data.total > 0)
        .sort((a,b) => b.total - a.total);
 
     return { yearlyCategoryData: categoryData, yearlyGrandTotal: grandTotal };
   }, [annualData, conversionRate]);
-  
-  const colorMap: {[key: string]: string} = {
-    green: '#4ade80',
-    sky: '#38bdf8',
-    fuchsia: '#e879f9',
-    orange: '#fb923c',
-    violet: '#a78bfa',
-    red: '#ef4444',
-    slate: '#9ca3af',
-  };
   
   const CategoryTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -431,7 +421,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, 
                       dataKey="total"
                     >
                       {yearlyCategoryData.map((entry) => (
-                        <Cell key={`cell-${entry.name}`} fill={colorMap[entry.color] || '#9ca3af'} className="focus:outline-none stroke-slate-800" />
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} className="focus:outline-none stroke-slate-800" />
                       ))}
                     </Pie>
                     <Tooltip content={<CategoryTooltip />} />
@@ -444,7 +434,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, 
                         <li key={item.name}>
                             <div className="flex justify-between items-center text-sm mb-1">
                                 <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap[item.color] || '#9ca3af' }}></span>
+                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></span>
                                     <span className="text-slate-300">{item.name}</span>
                                 </div>
                                 <span className="font-medium">
@@ -454,7 +444,7 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, 
                             <div className="w-full bg-slate-700/50 rounded-full h-2">
                                 <div 
                                 className="h-2 rounded-full" 
-                                style={{ width: `${(item.percentage * 100).toFixed(2)}%`, backgroundColor: colorMap[item.color] || '#9ca3af' }}
+                                style={{ width: `${(item.percentage * 100).toFixed(2)}%`, backgroundColor: item.color }}
                                 ></div>
                             </div>
                         </li>

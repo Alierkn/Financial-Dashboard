@@ -24,14 +24,7 @@ const formatCurrency = (value: number, currency: Currency) => {
 };
 
 const defaultColorMap: { [key: string]: string } = Object.fromEntries(
-    CATEGORIES.map(cat => {
-      const colorMapping: Record<string, string> = {
-        'green-400': '#4ade80', 'sky-400': '#38bdf8', 'fuchsia-400': '#e879f9',
-        'orange-400': '#fb923c', 'violet-400': '#a78bfa', 'red-500': '#ef4444', 'slate-400': '#94a3b8',
-      };
-      const colorKey = cat.color.replace('text-', '');
-      return [cat.id, colorMapping[colorKey] || '#94a3b8'];
-    })
+    CATEGORIES.map(cat => [cat.id, cat.hexColor])
 );
 
 const CategoryBudgetEditor: React.FC<{

@@ -56,7 +56,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
     return CATEGORIES.map(category => ({
       name: category.name,
       total: spendingByCategory[category.id] || 0,
-      color: category.color.split('-')[1], // e.g., 'text-green-400' -> 'green'
+      color: category.hexColor,
     })).filter(data => data.total > 0)
        .sort((a,b) => b.total - a.total);
   }, [expenses, conversionRate]);
@@ -65,16 +65,6 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
     return categoryData.reduce((sum, item) => sum + item.total, 0);
   }, [categoryData]);
   
-  const colorMap: {[key: string]: string} = {
-    green: '#4ade80',
-    sky: '#38bdf8',
-    fuchsia: '#e879f9',
-    orange: '#fb923c',
-    violet: '#a78bfa',
-    red: '#ef4444',
-    slate: '#9ca3af',
-  };
-
   const toggleCategoryVisibility = (categoryName: string) => {
     setHiddenCategories(prev => {
         const newSet = new Set(prev);
@@ -120,7 +110,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
                       cursor="pointer"
                     >
                       {visibleCategoryData.map((entry) => (
-                        <Cell key={`cell-${entry.name}`} fill={colorMap[entry.color] || '#9ca3af'} className="focus:outline-none stroke-slate-800" />
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} className="focus:outline-none stroke-slate-800" />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip currencySymbol={currency.symbol} grandTotal={grandTotal} />} />
@@ -139,7 +129,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
                         />
                         <Bar dataKey="total" radius={[4, 4, 0, 0]} onClick={handleChartClick}>
                             {visibleCategoryData.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={colorMap[entry.color] || '#9ca3af'} cursor="pointer" />
+                                <Cell key={`cell-${entry.name}`} fill={entry.color} cursor="pointer" />
                             ))}
                         </Bar>
                     </BarChart>
@@ -157,7 +147,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
                           onClick={() => toggleCategoryVisibility(item.name)}
                           >
                             <div className="flex items-center gap-3">
-                                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap[item.color] || '#9ca3af' }}></span>
+                                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></span>
                                 <span>{item.name}</span>
                             </div>
                             <span className="font-medium text-white">

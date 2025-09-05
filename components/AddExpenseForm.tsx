@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Expense } from '../types';
 import { CATEGORIES } from '../constants';
@@ -121,7 +122,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense }) 
               onClick={() => setPaymentMethod('cash')}
               className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'cash' ? 'bg-green-500/20 border-green-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 <span className="text-white">Cash</span>
             </button>
             <button
@@ -129,24 +130,25 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense }) 
               onClick={() => setPaymentMethod('credit-card')}
               className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'credit-card' ? 'bg-sky-500/20 border-sky-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-sky-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 <span className="text-white">Card</span>
             </button>
           </div>
         </div>
         <div>
-          <p className="block text-sm font-medium text-slate-300 mb-2">Category</p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <p id="category-label" className="block text-sm font-medium text-slate-300 mb-2">Category</p>
+          <div role="radiogroup" aria-labelledby="category-label" className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {CATEGORIES.map(category => (
               <button
                 type="button"
+                role="radio"
                 key={category.id}
                 onClick={() => {
                     setSelectedCategory(category.id);
                     if (errors.category) setErrors(prev => ({...prev, category: undefined}));
                 }}
                 className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${selectedCategory === category.id ? 'bg-sky-500/20 border-sky-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'} ${errors.category && !selectedCategory ? 'border-red-500' : ''}`}
-                aria-pressed={selectedCategory === category.id}
+                aria-checked={selectedCategory === category.id}
               >
                 <category.icon className={`w-6 h-6 mb-1 ${category.color}`} />
                 <span className="text-xs text-white text-center">{category.name}</span>

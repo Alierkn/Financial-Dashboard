@@ -10,6 +10,7 @@ export interface Category {
   name: string;
   icon: React.FC<{ className?: string }>;
   color: string;
+  hexColor: string;
 }
 
 export interface IncomeCategory {

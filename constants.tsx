@@ -5,7 +5,7 @@ import type { Currency, Category, IncomeCategory } from './types';
 
 const FoodIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
     </svg>
 );
 
@@ -61,11 +61,11 @@ export const CURRENCIES: Currency[] = [
 ];
 
 export const CATEGORIES: Category[] = [
-  { id: 'food', name: 'Food', icon: FoodIcon, color: 'text-green-400' },
-  { id: 'transport', name: 'Transport', icon: TransportIcon, color: 'text-sky-400' },
-  { id: 'shopping', name: 'Shopping', icon: ShoppingIcon, color: 'text-fuchsia-400' },
-  { id: 'bills', name: 'Bills', icon: BillsIcon, color: 'text-orange-400' },
-  { id: 'entertainment', name: 'Entertainment', icon: EntertainmentIcon, color: 'text-violet-400' },
-  { id: 'health', name: 'Health', icon: HealthIcon, color: 'text-red-500' },
-  { id: 'other', name: 'Other', icon: OtherIcon, color: 'text-slate-400' },
+  { id: 'food', name: 'Food', icon: FoodIcon, color: 'text-green-400', hexColor: '#4ade80' },
+  { id: 'transport', name: 'Transport', icon: TransportIcon, color: 'text-sky-400', hexColor: '#38bdf8' },
+  { id: 'shopping', name: 'Shopping', icon: ShoppingIcon, color: 'text-fuchsia-400', hexColor: '#e879f9' },
+  { id: 'bills', name: 'Bills', icon: BillsIcon, color: 'text-orange-400', hexColor: '#fb923c' },
+  { id: 'entertainment', name: 'Entertainment', icon: EntertainmentIcon, color: 'text-violet-400', hexColor: '#a78bfa' },
+  { id: 'health', name: 'Health', icon: HealthIcon, color: 'text-red-500', hexColor: '#ef4444' },
+  { id: 'other', name: 'Other', icon: OtherIcon, color: 'text-slate-400', hexColor: '#94a3b8' },
 ];

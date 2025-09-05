@@ -7,7 +7,7 @@ import { Dashboard } from './Dashboard';
 import { MonthlySetup } from './MonthlySetup';
 import { MonthlyView } from './MonthlyView';
 import { AnnualView } from './AnnualView';
-import { auth, db, firebase } from '../firebase';
+import { auth, db } from '../firebase';
 
 type View = 'dashboard' | 'setup' | 'monthly' | 'annual';
 
@@ -21,12 +21,22 @@ const LoadingSpinner: React.FC = () => (
     </div>
 );
 
+const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => (
+    <div className="flex items-center justify-center h-screen w-screen text-center p-4">
+        <div className="glass-card p-8">
+            <h2 className="text-2xl font-bold text-red-400 mb-4">An Error Occurred</h2>
+            <p className="text-slate-300">{message}</p>
+        </div>
+    </div>
+);
+
 export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const [allMonthlyData, setAllMonthlyData] = useState<MonthlyData[]>([]);
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(CURRENCIES[0]);
   const [categoryColors, setCategoryColors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [activeMonthId, setActiveMonthId] = useState<string | null>(null);
@@ -39,16 +49,22 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
 
   // Effect to load data from Firestore
   useEffect(() => {
+    const handleError = (error: Error, type: string) => {
+        console.error(`Error fetching ${type}:`, error);
+        setFirestoreError(`Could not load your ${type}. Please check your connection and try again.`);
+        setLoading(false);
+    };
+
     const unsubscribeMonthlyData = monthlyDataRef.orderBy('id', 'desc').onSnapshot(snapshot => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MonthlyData));
       setAllMonthlyData(data);
       setLoading(false);
-    });
+    }, (error) => handleError(error, 'financial data'));
 
     const unsubscribeIncomeSources = incomeSourcesRef.onSnapshot(snapshot => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as IncomeSource));
       setIncomeSources(data);
-    });
+    }, (error) => handleError(error, 'income sources'));
     
     const unsubscribePreferences = preferencesRef.onSnapshot(doc => {
         if (doc.exists) {
@@ -60,7 +76,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
                 setCategoryColors(prefs.categoryColors);
             }
         }
-    });
+    }, (error) => handleError(error, 'user preferences'));
 
     return () => {
       unsubscribeMonthlyData();
@@ -153,7 +169,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
 
   const handleAddExpense = (expense: Omit<Expense, 'id' | 'date'>) => {
     if (!activeMonthId) return;
-    const newExpense: Expense = { ...expense, id: Date.now().toString(), date: new Date().toISOString() };
+    const newExpense: Expense = { ...expense, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, date: new Date().toISOString() };
     const docRef = monthlyDataRef.doc(activeMonthId);
     db!.runTransaction(async (transaction) => {
       const doc = await transaction.get(docRef);
@@ -165,13 +181,15 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
 
   const handleDeleteExpense = (id: string) => {
-    if (!activeMonthId || !activeMonthData) return;
-    const expenseToRemove = activeMonthData.expenses.find(e => e.id === id);
-    if (expenseToRemove) {
-      monthlyDataRef.doc(activeMonthId).update({
-        expenses: firebase.firestore.FieldValue.arrayRemove(expenseToRemove)
-      });
-    }
+    if (!activeMonthId) return;
+    const docRef = monthlyDataRef.doc(activeMonthId);
+    db!.runTransaction(async (transaction) => {
+      const doc = await transaction.get(docRef);
+      if (!doc.exists) throw new Error("Document does not exist!");
+      const data = doc.data() as MonthlyData;
+      const newExpenses = data.expenses.filter(e => e.id !== id);
+      transaction.update(docRef, { expenses: newExpenses });
+    });
   };
   
   const handleAddIncomeSource = (source: Omit<IncomeSource, 'id'>) => {
@@ -191,7 +209,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     if(!activeMonthId) return;
     const transactionDateTime = new Date(`${date}T00:00:00`);
     const newTransaction: IncomeTransaction = {
-        id: Date.now().toString(),
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         name: source.name,
         amount: source.amount,
         date: transactionDateTime.toISOString(),
@@ -211,13 +229,15 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
   
   const handleDeleteIncomeTransaction = (id: string) => {
-    if (!activeMonthId || !activeMonthData) return;
-    const transactionToRemove = activeMonthData.incomeTransactions.find(t => t.id === id);
-    if(transactionToRemove) {
-      monthlyDataRef.doc(activeMonthId).update({
-        incomeTransactions: firebase.firestore.FieldValue.arrayRemove(transactionToRemove)
-      });
-    }
+    if (!activeMonthId) return;
+    const docRef = monthlyDataRef.doc(activeMonthId);
+    db!.runTransaction(async (transaction) => {
+        const doc = await transaction.get(docRef);
+        if (!doc.exists) throw new Error("Document does not exist!");
+        const data = doc.data() as MonthlyData;
+        const newTransactions = data.incomeTransactions.filter(t => t.id !== id);
+        transaction.update(docRef, { incomeTransactions: newTransactions });
+    });
   };
 
   const handleUpdateIncomeTransactionStatus = (id: string, status: 'completed') => {
@@ -253,6 +273,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
 
   const renderContent = () => {
+    if (firestoreError) {
+        return <ErrorDisplay message={firestoreError} />;
+    }
+    
     if (loading) {
         return <LoadingSpinner />;
     }
