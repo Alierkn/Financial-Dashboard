@@ -1,7 +1,3 @@
-// FIX: Changed firebase import from namespace (`* as firebase`) to default (`firebase`).
-// The previous namespace import was incorrect for the Firebase v8 compat library and caused
-// properties like `initializeApp`, `auth`, and `firestore` to be undefined on the `firebase` object.
-// The new import correctly loads the default export which is augmented by the other compat modules.
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
@@ -40,15 +36,34 @@ const firebaseConfig = {
 // The app will show a setup screen until this is replaced.
 export const isFirebaseConfigured = firebaseConfig.projectId !== "your-project-id";
 
+// Use `let` to allow variable initialization within the conditional block.
+let auth: firebase.auth.Auth | null = null;
+let googleProvider: firebase.auth.GoogleAuthProvider | null = null;
+let db: firebase.firestore.Firestore | null = null;
+
 // Initialize Firebase only if it's configured and hasn't been initialized yet
 if (isFirebaseConfigured && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
+
+  // Initialize services
+  auth = firebase.auth();
+  googleProvider = new firebase.auth.GoogleAuthProvider();
+  db = firebase.firestore();
+
+  // --- FIX: Explicitly set authentication persistence ---
+  // This is the core fix for data not being saved between sessions.
+  // By default, Firebase should persist the session, but sometimes this can fail
+  // in certain environments. Explicitly setting persistence to `LOCAL` ensures
+  // that the user remains logged in after closing the browser window or tab.
+  // When they return, the app will recognize them and load their saved data,
+  // preventing the "start from scratch" issue.
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .catch((error) => {
+      // This error can happen in restrictive environments (e.g., private browsing,
+      // disabled third-party cookies). Logging it helps debug if persistence fails.
+      console.error("Firebase Auth: Could not set session persistence.", error);
+    });
 }
 
-// Export Firebase services, or null if not configured.
-// The app logic in App.tsx will handle the null case by showing a setup screen.
-const auth = isFirebaseConfigured ? firebase.auth() : null;
-const googleProvider = isFirebaseConfigured ? new firebase.auth.GoogleAuthProvider() : null;
-const db = isFirebaseConfigured ? firebase.firestore() : null;
-
+// Export the initialized services. The app's logic handles the null case.
 export { auth, googleProvider, db, firebase };
