@@ -203,6 +203,7 @@ const translations = {
     firebaseGetValues: 'You can get these values from your Firebase project console under Project settings.',
 
     // Main App & Toasts
+    successMonthCreated: 'New monthly budget created successfully!',
     errorAdBlocker: 'Could not load your {{type}}. This may be due to a browser extension (like an ad-blocker) or a network issue. Please try disabling extensions and check your internet connection.',
     errorCouldNotLoad: 'Could not load your {{type}}. Please check your connection and try again. Error: {{message}}',
     errorCreateBudget: 'Failed to create new budget. Please check your connection and try again.',
@@ -447,6 +448,7 @@ const translations = {
     firebaseGetValues: 'Bu değerleri Firebase proje konsolunuzdaki Proje ayarlarından alabilirsiniz.',
 
     // Main App & Toasts
+    successMonthCreated: 'Yeni aylık bütçe başarıyla oluşturuldu!',
     errorAdBlocker: '{{type}} yüklenemedi. Bu, bir tarayıcı eklentisinden (reklam engelleyici gibi) veya bir ağ sorunundan kaynaklanıyor olabilir. Lütfen eklentileri devre dışı bırakmayı deneyin ve internet bağlantınızı kontrol edin.',
     errorCouldNotLoad: '{{type}} yüklenemedi. Lütfen bağlantınızı kontrol edip tekrar deneyin. Hata: {{message}}',
     errorCreateBudget: 'Yeni bütçe oluşturulamadı. Lütfen bağlantınızı kontrol edip tekrar deneyin.',

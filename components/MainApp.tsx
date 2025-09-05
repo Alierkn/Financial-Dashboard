@@ -124,12 +124,28 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const monthId = `${year}-${String(month).padStart(2, '0')}`;
-      const newMonthData: Omit<MonthlyData, 'id'> = { year, month, limit, baseIncome: income, incomeGoal, currency, expenses: [], incomeTransactions: [] };
-      await monthlyDataRef.doc(monthId).set(newMonthData);
-      setActiveMonthId(monthId);
-      setCurrentView('monthly');
-      return true;
+        const monthId = `${year}-${String(month).padStart(2, '0')}`;
+        const newMonthDataObject: MonthlyData = { 
+            id: monthId,
+            year, 
+            month, 
+            limit, 
+            baseIncome: income, 
+            incomeGoal, 
+            currency, 
+            expenses: [], 
+            incomeTransactions: [] 
+        };
+
+        await monthlyDataRef.doc(monthId).set(newMonthDataObject);
+
+        setAllMonthlyData(prevData => [newMonthDataObject, ...prevData].sort((a, b) => b.id.localeCompare(a.id)));
+        
+        setActiveMonthId(monthId);
+        setCurrentView('monthly');
+        
+        addToast(t('successMonthCreated'), 'success');
+        return true;
     } catch (error: any) {
         const message = error.message || t('errorCreateBudget');
         setSubmitError(message);
