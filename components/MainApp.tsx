@@ -7,6 +7,7 @@ import { Dashboard } from './Dashboard';
 import { MonthlySetup } from './MonthlySetup';
 import { MonthlyView } from './MonthlyView';
 import { AnnualView } from './AnnualView';
+import { LimitSetter } from './LimitSetter';
 import { auth, db } from '../firebase';
 
 type View = 'dashboard' | 'setup' | 'monthly' | 'annual';
@@ -36,6 +37,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(CURRENCIES[0]);
   const [categoryColors, setCategoryColors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
+  const [isInitialSetup, setIsInitialSetup] = useState(false);
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
   
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -67,6 +69,9 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     const unsubscribeMonthlyData = monthlyDataRef.orderBy('id', 'desc').onSnapshot(snapshot => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as MonthlyData));
       setAllMonthlyData(data);
+       if (loading) { // Only check for initial setup on the very first load
+         setIsInitialSetup(data.length === 0);
+       }
       setLoading(false);
     }, (error) => handleError(error, 'financial data'));
 
@@ -92,7 +97,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       unsubscribeIncomeSources();
       unsubscribePreferences();
     };
-  }, [monthlyDataRef, incomeSourcesRef, preferencesRef]);
+  }, [monthlyDataRef, incomeSourcesRef, preferencesRef, loading]);
 
   const activeMonthData = useMemo(() => {
     if (!activeMonthId) return null;
@@ -156,6 +161,15 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
 
   // Data manipulation handlers
+    const handleSetupFirstMonth = async (limit: number, income: number, currency: Currency) => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        
+        await handleSetupMonth(year, month, limit, income, 0, currency);
+        setIsInitialSetup(false); // Move out of initial setup mode
+    };
+
   const handleSetupMonth = async (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency) => {
     setIsSubmitting(true);
     setSubmitError(null);
@@ -300,6 +314,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     
     if (loading) {
         return <LoadingSpinner />;
+    }
+    
+    if (isInitialSetup) {
+        return <LimitSetter onSetup={handleSetupFirstMonth} />;
     }
 
     switch(currentView) {
