@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import type { Currency, Category, IncomeCategory } from './types';
 
@@ -46,11 +44,12 @@ const OtherIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) 
     </svg>
 );
 
+// FIX: Changed hyphens to underscores to match translation keys and types.
 export const INCOME_CATEGORIES: IncomeCategory[] = [
-    { id: 'private-lesson', name: 'Özel Ders' },
-    { id: 'italy-consultancy', name: 'İtalya Danışmanlık' },
-    { id: 'refunds', name: 'Refunds' },
-    { id: 'other', name: 'Other' },
+    { id: 'private_lesson' },
+    { id: 'italy_consultancy' },
+    { id: 'refunds' },
+    { id: 'other' },
 ];
 
 export const CURRENCIES: Currency[] = [
@@ -61,11 +60,11 @@ export const CURRENCIES: Currency[] = [
 ];
 
 export const CATEGORIES: Category[] = [
-  { id: 'food', name: 'Food', icon: FoodIcon, color: 'text-green-400', hexColor: '#4ade80' },
-  { id: 'transport', name: 'Transport', icon: TransportIcon, color: 'text-sky-400', hexColor: '#38bdf8' },
-  { id: 'shopping', name: 'Shopping', icon: ShoppingIcon, color: 'text-fuchsia-400', hexColor: '#e879f9' },
-  { id: 'bills', name: 'Bills', icon: BillsIcon, color: 'text-orange-400', hexColor: '#fb923c' },
-  { id: 'entertainment', name: 'Entertainment', icon: EntertainmentIcon, color: 'text-violet-400', hexColor: '#a78bfa' },
-  { id: 'health', name: 'Health', icon: HealthIcon, color: 'text-red-500', hexColor: '#ef4444' },
-  { id: 'other', name: 'Other', icon: OtherIcon, color: 'text-slate-400', hexColor: '#94a3b8' },
+  { id: 'food', icon: FoodIcon, color: 'text-green-400', hexColor: '#4ade80' },
+  { id: 'transport', icon: TransportIcon, color: 'text-sky-400', hexColor: '#38bdf8' },
+  { id: 'shopping', icon: ShoppingIcon, color: 'text-fuchsia-400', hexColor: '#e879f9' },
+  { id: 'bills', icon: BillsIcon, color: 'text-orange-400', hexColor: '#fb923c' },
+  { id: 'entertainment', icon: EntertainmentIcon, color: 'text-violet-400', hexColor: '#a78bfa' },
+  { id: 'health', icon: HealthIcon, color: 'text-red-500', hexColor: '#ef4444' },
+  { id: 'other', icon: OtherIcon, color: 'text-slate-400', hexColor: '#94a3b8' },
 ];

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Currency } from '../types';
 import { CURRENCIES } from '../constants';
+import { useLanguage } from '../contexts/LanguageProvider';
 
 interface CurrencyConverterProps {
   selectedCurrency: Currency;
@@ -10,9 +11,10 @@ interface CurrencyConverterProps {
 }
 
 export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ selectedCurrency, onCurrencyChange, isLoading, error }) => {
+  const { t } = useLanguage();
   return (
     <div className="flex items-center space-x-2">
-      <label htmlFor="display-currency" className="text-sm text-slate-400">View in:</label>
+      <label htmlFor="display-currency" className="text-sm text-slate-400">{t('viewIn')}:</label>
       <select
         id="display-currency"
         value={selectedCurrency.code}
@@ -25,9 +27,9 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ selectedCu
         aria-label="Display currency selector"
       >
         {isLoading ? (
-            <option>Loading...</option>
+            <option>{t('loading')}...</option>
         ) : error ? (
-            <option>Error</option>
+            <option>{t('error')}</option>
         ) : (
             CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>

@@ -1,19 +1,18 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 import type { MonthlyData } from '../types';
+import { useLanguage } from '../contexts/LanguageProvider';
 
 interface SpendingComparisonProps {
   currentMonthData: MonthlyData;
   previousMonthData: MonthlyData;
 }
 
-const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-const CustomTooltip = ({ active, payload, label, currentMonthName, previousMonthName, currencySymbol }: any) => {
+const CustomTooltip = ({ active, payload, label, currentMonthName, previousMonthName, currencySymbol, t }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-700/80 backdrop-blur-sm p-3 border border-slate-600 rounded-lg shadow-lg">
-          <p className="label text-white font-semibold mb-2">{`Day ${label}`}</p>
+          <p className="label text-white font-semibold mb-2">{t('day')} {label}</p>
           {payload.map((pld: any) => (
              <p key={pld.dataKey} style={{ color: pld.color }} className="text-sm">
                 {pld.dataKey === 'current' ? currentMonthName : previousMonthName}: {currencySymbol}{pld.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -27,10 +26,10 @@ const CustomTooltip = ({ active, payload, label, currentMonthName, previousMonth
 
 
 export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentMonthData, previousMonthData }) => {
+  const { t, months } = useLanguage();
+
   const comparisonData = useMemo(() => {
-    if (!currentMonthData || !previousMonthData) {
-      return [];
-    }
+    if (!currentMonthData || !previousMonthData) return [];
 
     const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
     const daysInCurrentMonth = getDaysInMonth(currentMonthData.year, currentMonthData.month);
@@ -40,8 +39,7 @@ export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentM
         const dailyTotals = new Map<number, number>();
         for (const expense of expenses) {
             const day = new Date(expense.date).getDate();
-            const currentTotal = dailyTotals.get(day) || 0;
-            dailyTotals.set(day, currentTotal + expense.amount);
+            dailyTotals.set(day, (dailyTotals.get(day) || 0) + expense.amount);
         }
         return dailyTotals;
     };
@@ -50,25 +48,17 @@ export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentM
     const previousDailyTotals = processExpenses(previousMonthData.expenses);
 
     const data = [];
-    let cumulativeCurrent = 0;
-    let cumulativePrevious = 0;
+    let cumulativeCurrent = 0, cumulativePrevious = 0;
     const maxDays = Math.max(daysInCurrentMonth, daysInPreviousMonth);
 
     for (let day = 1; day <= maxDays; day++) {
         cumulativeCurrent += currentDailyTotals.get(day) || 0;
         cumulativePrevious += previousDailyTotals.get(day) || 0;
-      
-        data.push({
-            day,
-            current: day <= daysInCurrentMonth ? cumulativeCurrent : null,
-            previous: day <= daysInPreviousMonth ? cumulativePrevious : null,
-        });
+        data.push({ day, current: day <= daysInCurrentMonth ? cumulativeCurrent : null, previous: day <= daysInPreviousMonth ? cumulativePrevious : null });
     }
-
     return data;
   }, [currentMonthData, previousMonthData]);
 
-  // For this comparison, we'll assume the display currency is that of the current month.
   const displayCurrency = currentMonthData.currency;
   const currentMonthName = months[currentMonthData.month - 1];
   const previousMonthName = months[previousMonthData.month - 1];
@@ -78,13 +68,12 @@ export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentM
   const difference = totalCurrentSpending - totalPreviousSpending;
   const percentageChange = totalPreviousSpending > 0 ? (difference / totalPreviousSpending) * 100 : (totalCurrentSpending > 0 ? 100 : 0);
 
-
   return (
     <div className="glass-card p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
             <div>
-                <h2 className="text-xl font-bold text-white">This Month vs. Last Month</h2>
-                <p className="text-sm text-slate-400">Cumulative Spending Comparison</p>
+                <h2 className="text-xl font-bold text-white">{t('thisMonthVsLastMonth')}</h2>
+                <p className="text-sm text-slate-400">{t('cumulativeSpendingComparison')}</p>
             </div>
             <div className={`text-right text-lg font-bold ${difference > 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {difference >= 0 ? '+' : ''}{displayCurrency.symbol}{difference.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -95,9 +84,9 @@ export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentM
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={comparisonData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis dataKey="day" stroke="#94a3b8" label={{ value: 'Day of Month', position: 'insideBottom', offset: -5, fill: '#94a3b8', fontSize: 12 }} />
+            <XAxis dataKey="day" stroke="#94a3b8" label={{ value: t('dayOfMonth'), position: 'insideBottom', offset: -5, fill: '#94a3b8', fontSize: 12 }} />
             <YAxis stroke="#94a3b8" tickFormatter={(value) => `${displayCurrency.symbol}${Number(value).toLocaleString(undefined, { notation: 'compact' })}`} />
-            <Tooltip content={<CustomTooltip currentMonthName={currentMonthName} previousMonthName={previousMonthName} currencySymbol={displayCurrency.symbol} />} />
+            <Tooltip content={<CustomTooltip currentMonthName={currentMonthName} previousMonthName={previousMonthName} currencySymbol={displayCurrency.symbol} t={t} />} />
             <Legend verticalAlign="top" height={36}/>
             <Line type="monotone" dataKey="current" name={currentMonthName} stroke="#38bdf8" strokeWidth={2} dot={false} connectNulls />
             <Line type="monotone" dataKey="previous" name={previousMonthName} stroke="#818cf8" strokeWidth={2} dot={false} connectNulls />

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from 'recharts';
 import type { Expense, Currency } from '../types';
+import { useLanguage } from '../contexts/LanguageProvider';
 
 interface ExpenseTrendViewProps {
   expenses: Expense[];
@@ -10,12 +11,12 @@ interface ExpenseTrendViewProps {
   year: number;
 }
 
-const CustomTooltip = ({ active, payload, label, currencySymbol }: any) => {
+const CustomTooltip = ({ active, payload, label, currencySymbol, t }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-700/80 backdrop-blur-sm p-2 border border-slate-600 rounded-md shadow-lg">
-          <p className="text-sm text-slate-300">{`Day ${label}`}</p>
-          <p className="text-base text-white font-bold">{`Cumulative: ${currencySymbol}${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
+          <p className="text-sm text-slate-300">{t('day')} {label}</p>
+          <p className="text-base text-white font-bold">{`${t('cumulative')}: ${currencySymbol}${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
         </div>
       );
     }
@@ -23,6 +24,8 @@ const CustomTooltip = ({ active, payload, label, currencySymbol }: any) => {
 };
 
 export const ExpenseTrendView: React.FC<ExpenseTrendViewProps> = ({ expenses, currency, conversionRate, month, year }) => {
+  const { t } = useLanguage();
+  
   const trendData = useMemo(() => {
     if (!expenses || expenses.length === 0) {
       return [];
@@ -53,7 +56,7 @@ export const ExpenseTrendView: React.FC<ExpenseTrendViewProps> = ({ expenses, cu
 
   return (
     <div className="h-full">
-      <h2 className="text-xl font-bold text-white mb-4">Cumulative Spending Trend</h2>
+      <h2 className="text-xl font-bold text-white mb-4">{t('cumulativeSpendingTrend')}</h2>
       {trendData.length > 0 ? (
         <div className="w-full h-80">
           <ResponsiveContainer width="100%" height="100%">
@@ -69,7 +72,7 @@ export const ExpenseTrendView: React.FC<ExpenseTrendViewProps> = ({ expenses, cu
               <YAxis stroke="#94a3b8" tick={{ fill: '#cbd5e1' }} tickFormatter={(value) => `${currency.symbol}${Number(value).toLocaleString(undefined, { notation: 'compact' })}`} />
               <Tooltip 
                 cursor={{ stroke: '#818cf8', strokeWidth: 2, strokeDasharray: '3 3' }}
-                content={<CustomTooltip currencySymbol={currency.symbol} />}
+                content={<CustomTooltip currencySymbol={currency.symbol} t={t} />}
               />
               <Area type="monotone" dataKey="cumulative" stroke="#a78bfa" strokeWidth={2} fillOpacity={1} fill="url(#colorCumulative)" />
             </AreaChart>
@@ -77,7 +80,7 @@ export const ExpenseTrendView: React.FC<ExpenseTrendViewProps> = ({ expenses, cu
         </div>
       ) : (
         <div className="flex items-center justify-center h-48 glass-card bg-opacity-30">
-          <p className="text-slate-400">No expense data to display trend.</p>
+          <p className="text-slate-400">{t('noExpenseDataForTrend')}</p>
         </div>
       )}
     </div>

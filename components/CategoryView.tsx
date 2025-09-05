@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { Expense, Currency } from '../types';
 import { CATEGORIES } from '../constants';
+import { useLanguage } from '../contexts/LanguageProvider';
 
 interface CategoryViewProps {
   expenses: Expense[];
@@ -9,7 +10,7 @@ interface CategoryViewProps {
   conversionRate: number;
 }
 
-const CustomTooltip = ({ active, payload, label, currencySymbol, grandTotal }: any) => {
+const CustomTooltip = ({ active, payload, label, currencySymbol, grandTotal, t }: any) => {
     if (active && payload && payload.length) {
       const name = label || payload[0].name;
       const value = payload[0].value;
@@ -20,7 +21,7 @@ const CustomTooltip = ({ active, payload, label, currencySymbol, grandTotal }: a
           <p className="intro text-slate-200">
             {`${currencySymbol}${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </p>
-          <p className="text-xs text-slate-400">{percentage.toFixed(2)}% of total</p>
+          <p className="text-xs text-slate-400">{t('percentageOfTotal', { percentage: percentage.toFixed(2) })}</p>
         </div>
       );
     }
@@ -43,6 +44,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, conversionRate }) => {
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+  const { t } = useLanguage();
 
   const categoryData = useMemo(() => {
     const spendingByCategory: { [key: string]: number } = {};
@@ -54,12 +56,12 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
     }
 
     return CATEGORIES.map(category => ({
-      name: category.name,
+      name: t(`category_${category.id}`),
       total: spendingByCategory[category.id] || 0,
       color: category.hexColor,
     })).filter(data => data.total > 0)
        .sort((a,b) => b.total - a.total);
-  }, [expenses, conversionRate]);
+  }, [expenses, conversionRate, t]);
 
   const grandTotal = useMemo(() => {
     return categoryData.reduce((sum, item) => sum + item.total, 0);
@@ -78,7 +80,6 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
   };
 
   const handleChartClick = (data: any) => {
-    // Recharts passes data differently for Pie and Bar charts, so we check both possibilities.
     const categoryName = data.name || data.payload?.name;
     if (categoryName) {
       toggleCategoryVisibility(categoryName);
@@ -89,7 +90,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
 
   return (
     <div className="h-full">
-      <h2 className="text-xl font-bold text-white mb-4">Spending by Category</h2>
+      <h2 className="text-xl font-bold text-white mb-4">{t('spendingByCategory')}</h2>
        {expenses.length > 0 ? (
         <>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-center">
@@ -113,7 +114,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
                         <Cell key={`cell-${entry.name}`} fill={entry.color} className="focus:outline-none stroke-slate-800" />
                       ))}
                     </Pie>
-                    <Tooltip content={<CustomTooltip currencySymbol={currency.symbol} grandTotal={grandTotal} />} />
+                    <Tooltip content={<CustomTooltip currencySymbol={currency.symbol} grandTotal={grandTotal} t={t} />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -125,7 +126,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
                         <YAxis stroke="#94a3b8" tickFormatter={(value) => `${currency.symbol}${Number(value).toLocaleString(undefined, { notation: 'compact' })}`}/>
                         <Tooltip 
                             cursor={{ fill: 'rgba(100, 116, 139, 0.2)' }} 
-                            content={<CustomTooltip currencySymbol={currency.symbol} grandTotal={grandTotal} />}
+                            content={<CustomTooltip currencySymbol={currency.symbol} grandTotal={grandTotal} t={t} />}
                         />
                         <Bar dataKey="total" radius={[4, 4, 0, 0]} onClick={handleChartClick}>
                             {visibleCategoryData.map((entry) => (
@@ -138,7 +139,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
             </div>
             
             <div className="mt-6">
-                <h3 className="text-lg font-semibold text-slate-300 mb-2">Category Totals (Click to toggle)</h3>
+                <h3 className="text-lg font-semibold text-slate-300 mb-2">{t('categoryTotals')}</h3>
                 <ul className="space-y-2 text-sm">
                     {categoryData.map(item => (
                         <li 
@@ -158,7 +159,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
                 </ul>
                 <hr className="border-slate-700 my-3"/>
                 <div className="flex justify-between items-center text-base font-bold">
-                    <span className="text-slate-200">Grand Total</span>
+                    <span className="text-slate-200">{t('grandTotal')}</span>
                     <span className="text-white">
                         {currency.symbol}{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
@@ -167,7 +168,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
         </>
       ) : (
         <div className="flex items-center justify-center h-48 glass-card bg-opacity-30">
-          <p className="text-slate-400">No data to display.</p>
+          <p className="text-slate-400">{t('noDataToDisplay')}</p>
         </div>
       )}
     </div>

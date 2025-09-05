@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Currency, Expense } from '../types';
 import { CATEGORIES } from '../constants';
+import { useLanguage } from '../contexts/LanguageProvider';
 
 interface SummaryProps {
   limit: number;
@@ -16,6 +17,7 @@ interface SummaryProps {
   onUpdateCategoryBudgets: (budgets: { [key: string]: number }) => void;
   onUpdateCategoryColors: (colors: { [key: string]: string }) => void;
   onUpdateIncomeGoal: (goal: number) => void;
+  isSubmitting?: boolean;
 }
 
 // Helper function for consistent currency formatting
@@ -33,8 +35,11 @@ const CategoryBudgetEditor: React.FC<{
     currentBudgets: { [key: string]: number } | undefined,
     currentColors: { [key: string]: string },
     onSave: (newBudgets: { [key: string]: number }, newColors: { [key: string]: string }) => void,
-    onCancel: () => void
-}> = ({ limit, currency, currentBudgets, currentColors, onSave, onCancel }) => {
+    onCancel: () => void,
+    isSubmitting?: boolean,
+}> = ({ limit, currency, currentBudgets, currentColors, onSave, onCancel, isSubmitting }) => {
+    const { t } = useLanguage();
+    
     const [budgets, setBudgets] = useState<{ [key: string]: string }>(() => {
         const initial: { [key: string]: string } = {};
         const hasExistingBudgets = currentBudgets && Object.keys(currentBudgets).length > 0;
@@ -47,18 +52,6 @@ const CategoryBudgetEditor: React.FC<{
                     initial[catId] = currentBudgets[catId].toString();
                 }
             });
-        } else {
-            const defaultBudgetCategories = ['food', 'transport', 'shopping', 'bills'];
-            const numDefaultCategories = defaultBudgetCategories.length;
-            
-            if (limit > 0 && numDefaultCategories > 0) {
-                const splitAmount = (limit / numDefaultCategories).toFixed(2);
-                defaultBudgetCategories.forEach(catId => {
-                    if (initial.hasOwnProperty(catId)) {
-                        initial[catId] = splitAmount;
-                    }
-                });
-            }
         }
         return initial;
     });
@@ -100,11 +93,11 @@ const CategoryBudgetEditor: React.FC<{
 
     return (
         <div className="mt-4 border-t border-slate-700 pt-4 animate-fade-in">
-            <h3 className="text-lg font-semibold mb-3">Set Category Budgets & Colors</h3>
+            <h3 className="text-lg font-semibold mb-3">{t('setCategoryBudgetsAndColors')}</h3>
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                 {CATEGORIES.map(category => (
                     <div key={category.id} className="grid grid-cols-[1fr,auto,auto] items-center gap-3">
-                         <label htmlFor={`budget-${category.id}`} className="text-sm text-slate-300 col-span-1 truncate">{category.name}</label>
+                         <label htmlFor={`budget-${category.id}`} className="text-sm text-slate-300 col-span-1 truncate">{t(`category_${category.id}`)}</label>
                          <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currency.symbol}</span>
                             <input
@@ -121,8 +114,8 @@ const CategoryBudgetEditor: React.FC<{
                             value={colors[category.id]}
                             onChange={(e) => handleColorChange(category.id, e.target.value)}
                             className="w-9 h-9 p-0 bg-transparent border-none rounded-md cursor-pointer"
-                            title={`Set color for ${category.name}`}
-                            aria-label={`Color picker for ${category.name}`}
+                            title={t('setColorFor', { categoryName: t(`category_${category.id}`) })}
+                            aria-label={t('colorPickerFor', { categoryName: t(`category_${category.id}`) })}
                          />
                     </div>
                 ))}
@@ -130,7 +123,7 @@ const CategoryBudgetEditor: React.FC<{
             <div className="mt-4 border-t border-slate-700 pt-3 space-y-2">
                 <div className="flex justify-between items-center text-sm">
                     <span className={`font-semibold ${isOverAllocated ? 'text-red-400' : 'text-green-400'}`}>
-                        {isOverAllocated ? 'Over-allocated by:' : 'Remaining to Allocate:'}
+                        {isOverAllocated ? t('overAllocatedBy') : t('remainingToAllocate')}
                     </span>
                     <span className={`font-bold ${isOverAllocated ? 'text-red-400' : 'text-green-400'}`}>
                         {formatCurrency(Math.abs(remainingToAllocate), currency)}
@@ -143,13 +136,15 @@ const CategoryBudgetEditor: React.FC<{
                     ></div>
                 </div>
                 <div className="flex justify-between text-xs text-slate-400">
-                    <span>{formatCurrency(allocatedTotal, currency)} Allocated</span>
-                    <span>Limit: {formatCurrency(limit, currency)}</span>
+                    <span>{formatCurrency(allocatedTotal, currency)} {t('allocated')}</span>
+                    <span>{t('limit')}: {formatCurrency(limit, currency)}</span>
                 </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-                <button onClick={onCancel} className="bg-slate-600/50 hover:bg-slate-500/50 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Cancel</button>
-                <button onClick={handleSave} className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Save Budgets</button>
+                <button onClick={onCancel} className="bg-slate-600/50 hover:bg-slate-500/50 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm" disabled={isSubmitting}>{t('cancel')}</button>
+                <button onClick={handleSave} className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm disabled:opacity-50" disabled={isSubmitting}>
+                    {isSubmitting ? t('saving') : t('saveBudgets')}
+                </button>
             </div>
         </div>
     );
@@ -170,11 +165,12 @@ export const Summary: React.FC<SummaryProps> = ({
   onUpdateCategoryBudgets,
   onUpdateCategoryColors,
   onUpdateIncomeGoal,
+  isSubmitting,
 }) => {
   const [isEditingBudgets, setIsEditingBudgets] = useState(false);
   const [isEditingIncomeGoal, setIsEditingIncomeGoal] = useState(false);
   const [newIncomeGoal, setNewIncomeGoal] = useState<string>('');
-
+  const { t } = useLanguage();
 
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0) * conversionRate;
@@ -234,7 +230,7 @@ export const Summary: React.FC<SummaryProps> = ({
         
         {/* Total Spent */}
         <div className="space-y-2">
-          <p className="text-slate-400 text-sm font-medium">Total Spent</p>
+          <p className="text-slate-400 text-sm font-medium">{t('totalSpent')}</p>
           <p className="text-3xl font-bold text-white">{formatCurrency(totalSpent, currency)}</p>
           <div className="w-full bg-slate-700/50 rounded-full h-2.5">
             <div
@@ -246,19 +242,19 @@ export const Summary: React.FC<SummaryProps> = ({
 
         {/* Remaining Budget */}
         <div className="space-y-2">
-            <p className="text-slate-400 text-sm font-medium">Remaining Budget</p>
+            <p className="text-slate-400 text-sm font-medium">{t('remainingBudget')}</p>
             <p className={`text-3xl font-bold ${remaining < 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {formatCurrency(remaining, currency)}
             </p>
             <p className="text-xs text-slate-500">
-                Limit: {formatCurrency(limit * conversionRate, currency)}
+                {t('limit')}: {formatCurrency(limit * conversionRate, currency)}
             </p>
         </div>
 
         {/* Total Income & Goal */}
         <div className="space-y-2">
             <div className="flex justify-between items-center">
-                <p className="text-slate-400 text-sm font-medium">Completed Income</p>
+                <p className="text-slate-400 text-sm font-medium">{t('completedIncome')}</p>
                 {!isEditingIncomeGoal && (
                     <button
                         onClick={() => {
@@ -266,8 +262,9 @@ export const Summary: React.FC<SummaryProps> = ({
                             setNewIncomeGoal(String(incomeGoalInDisplayCurrency || ''));
                         }}
                         className="text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-1 px-2 rounded-lg transition-colors"
+                        disabled={isSubmitting}
                     >
-                        {incomeGoal && incomeGoal > 0 ? 'Edit Goal' : 'Set Goal'}
+                        {incomeGoal && incomeGoal > 0 ? t('editGoal') : t('setGoal')}
                     </button>
                 )}
             </div>
@@ -280,15 +277,16 @@ export const Summary: React.FC<SummaryProps> = ({
                             type="number"
                             value={newIncomeGoal}
                             onChange={(e) => setNewIncomeGoal(e.target.value)}
-                            placeholder="Set income goal"
+                            placeholder={t('setIncomeGoal')}
                             className="w-full pl-8 pr-2 py-1.5 bg-slate-700/50 text-white border border-slate-600 rounded-md focus:ring-1 focus:ring-sky-500 outline-none"
-                            aria-label="Monthly income goal"
+                            aria-label={t('monthlyIncomeGoal')}
+                            disabled={isSubmitting}
                         />
                     </div>
-                    <button onClick={handleSaveIncomeGoal} className="p-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition-colors" aria-label="Save income goal">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                    <button onClick={handleSaveIncomeGoal} className="p-2 rounded-md bg-sky-600 hover:bg-sky-700 text-white transition-colors disabled:opacity-50" aria-label={t('saveIncomeGoal')} disabled={isSubmitting}>
+                        {isSubmitting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                     </button>
-                     <button onClick={() => setIsEditingIncomeGoal(false)} className="p-2 rounded-md bg-slate-600/50 hover:bg-slate-500/50 text-white transition-colors" aria-label="Cancel editing income goal">
+                     <button onClick={() => setIsEditingIncomeGoal(false)} className="p-2 rounded-md bg-slate-600/50 hover:bg-slate-500/50 text-white transition-colors" aria-label={t('cancelEditIncomeGoal')} disabled={isSubmitting}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                     </button>
                 </div>
@@ -304,12 +302,12 @@ export const Summary: React.FC<SummaryProps> = ({
                                 ></div>
                             </div>
                             <p className="text-xs text-slate-500 text-right">
-                                Goal: {formatCurrency(incomeGoalInDisplayCurrency, currency)}
+                                {t('goal')}: {formatCurrency(incomeGoalInDisplayCurrency, currency)}
                             </p>
                         </>
                     ) : (
                          <p className="text-xs text-slate-500">
-                            No goal set.
+                            {t('noGoalSet')}
                         </p>
                     )}
                 </>
@@ -318,23 +316,23 @@ export const Summary: React.FC<SummaryProps> = ({
 
         {/* Pending Income */}
          <div className="space-y-2">
-            <p className="text-slate-400 text-sm font-medium">Pending Income</p>
+            <p className="text-slate-400 text-sm font-medium">{t('pendingIncome')}</p>
             <p className="text-3xl font-bold text-yellow-400">{formatCurrency(totalPending, currency)}</p>
             <p className="text-xs text-slate-500">
-                Potential total income: {formatCurrency(totalIncome + totalPending, currency)}
+                {t('potentialTotalIncome')}: {formatCurrency(totalIncome + totalPending, currency)}
             </p>
         </div>
       </div>
       
       <div className="mt-6 border-t border-slate-700 pt-4">
         <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-semibold text-slate-200">Category Spending</h3>
+            <h3 className="text-lg font-semibold text-slate-200">{t('categorySpending')}</h3>
             {!isEditingBudgets && (
                 <button 
                     onClick={() => setIsEditingBudgets(true)} 
                     className="text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-1.5 px-3 rounded-lg transition-colors"
                 >
-                    {hasBudgets ? 'Edit Budgets' : 'Set Budgets'}
+                    {hasBudgets ? t('editBudgets') : t('setBudgets')}
                 </button>
             )}
         </div>
@@ -350,6 +348,7 @@ export const Summary: React.FC<SummaryProps> = ({
                 currentColors={categoryColors}
                 onSave={handleSaveBudgets}
                 onCancel={() => setIsEditingBudgets(false)}
+                isSubmitting={isSubmitting}
             />
         ) : (
             hasBudgets ? (
@@ -366,7 +365,7 @@ export const Summary: React.FC<SummaryProps> = ({
                         return (
                             <div key={category.id}>
                                 <div className="flex justify-between text-sm mb-1">
-                                    <span className="font-medium" style={{ color: isOverBudget ? '#f87171' : color }}>{category.name}</span>
+                                    <span className="font-medium" style={{ color: isOverBudget ? '#f87171' : color }}>{t(`category_${category.id}`)}</span>
                                     <span className={`font-semibold ${isOverBudget ? 'text-red-400' : 'text-slate-400'}`}>
                                         {formatCurrency(spent, currency)}
                                         <span className="text-slate-500"> / {formatCurrency(budget, currency)}</span>
@@ -387,7 +386,7 @@ export const Summary: React.FC<SummaryProps> = ({
                 </div>
             ) : (
                 <div className="text-center py-4">
-                    <p className="text-slate-400">No category budgets set. Click 'Set Budgets' to allocate your spending limit.</p>
+                    <p className="text-slate-400">{t('noCategoryBudgetsSet')}</p>
                 </div>
             )
         )}

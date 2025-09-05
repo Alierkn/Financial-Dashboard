@@ -5,17 +5,22 @@ export interface Currency {
   code: string;
 }
 
+// FIX: Define a specific type for category IDs to improve type safety and fix translation key errors.
+export type CategoryId = 'food' | 'transport' | 'shopping' | 'bills' | 'entertainment' | 'health' | 'other';
+
 export interface Category {
-  id: string;
-  name: string;
+  id: CategoryId;
   icon: React.FC<{ className?: string }>;
   color: string;
   hexColor: string;
 }
 
+// FIX: Define a specific type for income category IDs to improve type safety and fix translation key errors.
+// FIX: Changed hyphens to underscores to match translation keys.
+export type IncomeCategoryId = 'private_lesson' | 'italy_consultancy' | 'refunds' | 'other';
+
 export interface IncomeCategory {
-  id: string;
-  name: string;
+  id: IncomeCategoryId;
 }
 
 export interface Expense {
