@@ -1,5 +1,7 @@
-// FIX: The namespace import `import * as firebase from 'firebase/compat/app'` was incorrect for this setup.
-// Using the default import provides the core firebase object with the necessary methods.
+// FIX: Changed firebase import from namespace (`* as firebase`) to default (`firebase`).
+// The previous namespace import was incorrect for the Firebase v8 compat library and caused
+// properties like `initializeApp`, `auth`, and `firestore` to be undefined on the `firebase` object.
+// The new import correctly loads the default export which is augmented by the other compat modules.
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';

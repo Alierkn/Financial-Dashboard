@@ -42,6 +42,9 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const [activeMonthId, setActiveMonthId] = useState<string | null>(null);
   const [activeYear, setActiveYear] = useState<number | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   // Firestore collections references
   const monthlyDataRef = useMemo(() => db!.collection('users').doc(user.uid).collection('monthlyData'), [user.uid]);
   const incomeSourcesRef = useMemo(() => db!.collection('users').doc(user.uid).collection('incomeSources'), [user.uid]);
@@ -134,7 +137,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
 
   // Navigation handlers
-  const handleStartNewMonth = () => setCurrentView('setup');
+  const handleStartNewMonth = () => {
+    setSubmitError(null);
+    setCurrentView('setup');
+  };
   const handleViewMonth = (monthId: string) => {
     setActiveMonthId(monthId);
     setCurrentView('monthly');
@@ -151,20 +157,29 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
 
   // Data manipulation handlers
   const handleSetupMonth = async (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency) => {
-    const monthId = `${year}-${String(month).padStart(2, '0')}`;
-    const newMonthData: Omit<MonthlyData, 'id'> = {
-      year,
-      month,
-      limit,
-      baseIncome: income,
-      incomeGoal,
-      currency,
-      expenses: [],
-      incomeTransactions: []
-    };
-    await monthlyDataRef.doc(monthId).set(newMonthData);
-    setActiveMonthId(monthId);
-    setCurrentView('monthly');
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const monthId = `${year}-${String(month).padStart(2, '0')}`;
+      const newMonthData: Omit<MonthlyData, 'id'> = {
+        year,
+        month,
+        limit,
+        baseIncome: income,
+        incomeGoal,
+        currency,
+        expenses: [],
+        incomeTransactions: []
+      };
+      await monthlyDataRef.doc(monthId).set(newMonthData);
+      setActiveMonthId(monthId);
+      setCurrentView('monthly');
+    } catch (error: any) {
+        console.error("Error creating new month:", error);
+        setSubmitError(error.message || "Failed to create new budget. Please check your connection and try again.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
   
   const handleDeleteMonth = async (monthId: string) => {
@@ -293,6 +308,8 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
                   onSetup={handleSetupMonth} 
                   onCancel={handleBackToDashboard}
                   existingMonths={allMonthlyData.map(d => d.id)}
+                  isSubmitting={isSubmitting}
+                  submissionError={submitError}
                 />;
       case 'monthly':
         if (activeMonthData) {

@@ -6,9 +6,11 @@ interface MonthlySetupProps {
   onSetup: (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency) => void;
   onCancel: () => void;
   existingMonths: string[]; // "YYYY-MM"
+  isSubmitting?: boolean;
+  submissionError?: string | null;
 }
 
-export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, existingMonths }) => {
+export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, existingMonths, isSubmitting, submissionError }) => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [limit, setLimit] = useState('');
@@ -19,6 +21,8 @@ export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, e
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const limitValue = parseFloat(limit);
     const incomeValue = parseFloat(income);
     const incomeGoalValue = parseFloat(incomeGoal) || 0;
@@ -141,12 +145,13 @@ export const MonthlySetup: React.FC<MonthlySetupProps> = ({ onSetup, onCancel, e
             </select>
           </div>
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          {submissionError && <p className="text-red-400 text-sm text-center">{submissionError}</p>}
           <div className="flex gap-4">
-             <button type="button" onClick={onCancel} className="w-full bg-slate-600/50 hover:bg-slate-500/50 text-white font-bold py-3 px-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200">
+             <button type="button" onClick={onCancel} className="w-full bg-slate-600/50 hover:bg-slate-500/50 text-white font-bold py-3 px-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSubmitting}>
                 Cancel
             </button>
-            <button type="submit" className="w-full bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300">
-                Create Budget
+            <button type="submit" className="w-full bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Budget'}
             </button>
           </div>
         </form>
