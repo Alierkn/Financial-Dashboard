@@ -246,8 +246,9 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, 
     URL.revokeObjectURL(url);
   };
 
-  const currentYearIndex = allAvailableYears.indexOf(year);
-  const canGoToNext = currentYearIndex > 0;
+  // UX Improvement: Add logic for previous/next year navigation
+  const currentYearIndex = useMemo(() => allAvailableYears.indexOf(year), [allAvailableYears, year]);
+  const canGoToNext = currentYearIndex > 0; // Array is sorted descending, so next is a lower index
   const canGoToPrev = currentYearIndex < allAvailableYears.length - 1;
 
   const handleNextYear = () => {
@@ -279,8 +280,9 @@ export const AnnualView: React.FC<AnnualViewProps> = ({ user, year, annualData, 
                 </p>
                 <button onClick={onSignOut} className="text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">Sign Out</button>
             </div>
+            {/* UX Improvement: Add Previous/Next year buttons for easier navigation */}
             <div className="flex items-center space-x-2">
-                <label htmlFor="year-selector" className="text-sm text-slate-400">View Year:</label>
+                <label htmlFor="year-selector" className="text-sm text-slate-400 sr-only">View Year:</label>
                  <button 
                     onClick={handlePrevYear} 
                     disabled={!canGoToPrev} 

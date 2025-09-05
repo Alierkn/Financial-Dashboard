@@ -4,9 +4,11 @@ import { CURRENCIES } from '../constants';
 
 interface LimitSetterProps {
   onSetup: (limit: number, income: number, currency: Currency) => void;
+  isSubmitting?: boolean;
+  submissionError?: string | null;
 }
 
-export const LimitSetter: React.FC<LimitSetterProps> = ({ onSetup }) => {
+export const LimitSetter: React.FC<LimitSetterProps> = ({ onSetup, isSubmitting, submissionError }) => {
   const [limit, setLimit] = useState('');
   const [income, setIncome] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>(CURRENCIES[0]);
@@ -14,6 +16,8 @@ export const LimitSetter: React.FC<LimitSetterProps> = ({ onSetup }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const limitValue = parseFloat(limit);
     const incomeValue = parseFloat(income);
 
@@ -83,9 +87,13 @@ export const LimitSetter: React.FC<LimitSetterProps> = ({ onSetup }) => {
               ))}
             </select>
           </div>
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-          <button type="submit" className="w-full bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300">
-            Start Tracking
+          {(error || submissionError) && <p className="text-red-400 text-sm text-center">{error || submissionError}</p>}
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Setting Up...' : 'Start Tracking'}
           </button>
         </form>
       </div>

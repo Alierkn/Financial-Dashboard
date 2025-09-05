@@ -161,21 +161,12 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
 
   // Data manipulation handlers
-    const handleSetupFirstMonth = async (limit: number, income: number, currency: Currency) => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        
-        await handleSetupMonth(year, month, limit, income, 0, currency);
-        setIsInitialSetup(false); // Move out of initial setup mode
-    };
-
-  const handleSetupMonth = async (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency) => {
+  const handleSetupMonth = async (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency): Promise<boolean> => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
       const monthId = `${year}-${String(month).padStart(2, '0')}`;
-      const newMonthData: Omit<MonthlyData, 'id'> = {
+      const newMonthDataObject: Omit<MonthlyData, 'id'> = {
         year,
         month,
         limit,
@@ -185,15 +176,37 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
         expenses: [],
         incomeTransactions: []
       };
-      await monthlyDataRef.doc(monthId).set(newMonthData);
+      
+      await monthlyDataRef.doc(monthId).set(newMonthDataObject);
+
+      // FIX: Manually update local state to avoid race condition with the onSnapshot listener.
+      // This ensures the data is available before navigating to the new monthly view.
+      const newMonthDataForState: MonthlyData = { ...newMonthDataObject, id: monthId };
+      setAllMonthlyData(prevData => [newMonthDataForState, ...prevData].sort((a, b) => b.id.localeCompare(a.id)));
+
       setActiveMonthId(monthId);
       setCurrentView('monthly');
+      return true;
     } catch (error: any) {
         console.error("Error creating new month:", error);
         setSubmitError(error.message || "Failed to create new budget. Please check your connection and try again.");
+        return false;
     } finally {
         setIsSubmitting(false);
     }
+  };
+
+  const handleSetupFirstMonth = async (limit: number, income: number, currency: Currency) => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      
+      // We pass the result of handleSetupMonth to determine if we should clear the initial setup flag
+      const success = await handleSetupMonth(year, month, limit, income, 0, currency);
+      
+      if (success) {
+          setIsInitialSetup(false);
+      }
   };
   
   const handleDeleteMonth = async (monthId: string) => {
@@ -316,8 +329,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
         return <LoadingSpinner />;
     }
     
+    // FIX: Pass submission status and error props to the initial setup component.
+    // This provides crucial user feedback during the budget creation process.
     if (isInitialSetup) {
-        return <LimitSetter onSetup={handleSetupFirstMonth} />;
+        return <LimitSetter onSetup={handleSetupFirstMonth} isSubmitting={isSubmitting} submissionError={submitError} />;
     }
 
     switch(currentView) {
