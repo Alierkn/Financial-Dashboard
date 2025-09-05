@@ -23,6 +23,12 @@ const translations = {
     errorFirebaseConfigGoogle: 'Configuration error. Please enable the Google sign-in provider in your Firebase project.',
     errorGoogleSignIn: 'Failed to sign in with Google.',
     errorOccurred: 'An error occurred.',
+    
+    // Language Toggle
+    switchToEnglish: 'Switch to English',
+    switchToTurkish: 'Switch to Turkish',
+    switchToItalian: 'Switch to Italian',
+    switchToArabic: 'Switch to Arabic',
 
     // Dashboard
     financialDashboard: 'Financial Dashboard',
@@ -268,6 +274,12 @@ const translations = {
     errorFirebaseConfigGoogle: 'Yapılandırma hatası. Lütfen Firebase projenizde Google ile giriş sağlayıcısını etkinleştirin.',
     errorGoogleSignIn: 'Google ile giriş yapılamadı.',
     errorOccurred: 'Bir hata oluştu.',
+    
+    // Language Toggle
+    switchToEnglish: 'İngilizce\'ye Geç',
+    switchToTurkish: 'Türkçe\'ye Geç',
+    switchToItalian: 'İtalyanca\'ya Geç',
+    switchToArabic: 'Arapça\'ya Geç',
 
     // Dashboard
     financialDashboard: 'Finansal Pano',
@@ -513,6 +525,12 @@ const translations = {
     errorFirebaseConfigGoogle: 'Errore di configurazione. Abilita il provider di accesso Google nel tuo progetto Firebase.',
     errorGoogleSignIn: 'Accesso con Google non riuscito.',
     errorOccurred: 'Si è verificato un errore.',
+    
+    // Language Toggle
+    switchToEnglish: 'Passa all\'Inglese',
+    switchToTurkish: 'Passa al Turco',
+    switchToItalian: 'Passa all\'Italiano',
+    switchToArabic: 'Passa all\'Arabo',
 
     // Dashboard
     financialDashboard: 'Dashboard Finanziaria',
@@ -758,6 +776,12 @@ const translations = {
     errorFirebaseConfigGoogle: 'خطأ في الإعداد. يرجى تمكين مزود تسجيل الدخول بجوجل في مشروع Firebase الخاص بك.',
     errorGoogleSignIn: 'فشل تسجيل الدخول باستخدام جوجل.',
     errorOccurred: 'حدث خطأ ما.',
+    
+    // Language Toggle
+    switchToEnglish: 'التبديل إلى الإنجليزية',
+    switchToTurkish: 'التبديل إلى التركية',
+    switchToItalian: 'التبديل إلى الإيطالية',
+    switchToArabic: 'التبديل إلى العربية',
 
     // Dashboard
     financialDashboard: 'لوحة التحكم المالية',
