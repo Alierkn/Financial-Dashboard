@@ -20,7 +20,11 @@ export const Auth: React.FC = () => {
         await auth!.createUserWithEmailAndPassword(email, password);
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.includes('CONFIGURATION_NOT_FOUND'))) {
+        setError('Configuration error. Please enable Email/Password sign-in provider in your Firebase project.');
+      } else {
+        setError(err.message || 'An error occurred.');
+      }
     } finally {
       setLoading(false);
     }
@@ -32,7 +36,11 @@ export const Auth: React.FC = () => {
     try {
       await auth!.signInWithPopup(googleProvider!);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google.');
+      if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.includes('CONFIGURATION_NOT_FOUND'))) {
+        setError('Configuration error. Please enable the Google sign-in provider in your Firebase project.');
+      } else {
+        setError(err.message || 'Failed to sign in with Google.');
+      }
     } finally {
       setLoading(false);
     }
