@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import type { Currency, Expense } from '../types';
 import { CATEGORIES } from '../constants';
 import { useLanguage } from '../contexts/LanguageProvider';
+import { useGeminiAI } from '../hooks/useGeminiAI';
 
 interface SummaryProps {
   limit: number;
@@ -30,11 +30,6 @@ const defaultColorMap: { [key: string]: string } = Object.fromEntries(
     CATEGORIES.map(cat => [cat.id, cat.hexColor])
 );
 
-// Initialize the AI client at the module level
-const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
-if (!ai) {
-  console.warn("Gemini AI client could not be initialized. API key might be missing.");
-}
 
 const CategoryBudgetEditor: React.FC<{
     limit: number,
@@ -178,9 +173,8 @@ export const Summary: React.FC<SummaryProps> = ({
   const [isEditingIncomeGoal, setIsEditingIncomeGoal] = useState(false);
   const [newIncomeGoal, setNewIncomeGoal] = useState<string>('');
   const { t } = useLanguage();
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<string | null>(null);
+  
+  const { data: analysis, isLoading: isAnalyzing, generateAnalysis } = useGeminiAI<string>();
 
   const totalSpent = useMemo(() => {
     return expenses
@@ -235,51 +229,30 @@ export const Summary: React.FC<SummaryProps> = ({
     }
   };
 
-  const handleGetAnalysis = async () => {
-    if (!ai) {
-        console.error("AI client not initialized.");
-        setAnalysis(t('errorAiAnalysis'));
-        return;
-    }
-    setIsAnalyzing(true);
-    setAnalysis(null);
-    try {
-        const categorySpendingText = CATEGORIES
-            .map(cat => {
-                const spent = spendingByCategory[cat.id] || 0;
-                if (spent > 0) {
-                    return `${t(`category_${cat.id}`)}: ${formatCurrency(spent, currency)}`;
-                }
-                return null;
-            })
-            .filter(Boolean)
-            .join(', ');
+  const handleGetAnalysis = () => {
+    const categorySpendingText = CATEGORIES
+        .map(cat => {
+            const spent = spendingByCategory[cat.id] || 0;
+            if (spent > 0) {
+                return `${t(`category_${cat.id}`)}: ${formatCurrency(spent, currency)}`;
+            }
+            return null;
+        })
+        .filter(Boolean)
+        .join(', ');
 
-        const prompt = `
-            You are a helpful and concise financial assistant. Analyze the following financial data for the month and provide a 2-3 sentence summary in the user's language (${t('language_code')}). 
-            Highlight the highest spending category and comment on how close the user is to their budget limit. Be encouraging.
+    const prompt = `
+        You are a helpful and concise financial assistant. Analyze the following financial data for the month and provide a 2-3 sentence summary in the user's language (${t('language_code')}). 
+        Highlight the highest spending category and comment on how close the user is to their budget limit. Be encouraging.
 
-            Data:
-            - Total Spent: ${formatCurrency(totalSpent, currency)}
-            - Budget Limit: ${formatCurrency(limit * conversionRate, currency)}
-            - Remaining Budget: ${formatCurrency(remaining, currency)}
-            - Total Income: ${formatCurrency(totalIncome, currency)}
-            - Spending by Category: ${categorySpendingText || 'No spending yet.'}
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        setAnalysis(response.text);
-
-    } catch (error) {
-        console.error("Error getting financial analysis:", error);
-        setAnalysis(t('errorAiAnalysis'));
-    } finally {
-        setIsAnalyzing(false);
-    }
+        Data:
+        - Total Spent: ${formatCurrency(totalSpent, currency)}
+        - Budget Limit: ${formatCurrency(limit * conversionRate, currency)}
+        - Remaining Budget: ${formatCurrency(remaining, currency)}
+        - Total Income: ${formatCurrency(totalIncome, currency)}
+        - Spending by Category: ${categorySpendingText || 'No spending yet.'}
+    `;
+    generateAnalysis(prompt);
   };
   
   const hasBudgets = categoryBudgets && Object.keys(categoryBudgets).length > 0;
