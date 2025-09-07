@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
@@ -68,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, monthlyData, onStart
 
   return (
     <div className="max-w-7xl mx-auto">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 animate-fade-in">
+      <header className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 animate-fade-in">
         <div>
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-violet-500">
               {t('financialDashboard')}
