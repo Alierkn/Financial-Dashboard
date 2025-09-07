@@ -10,6 +10,20 @@ export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
 
+  const getAuthErrorMessage = (error: any, provider: 'email' | 'google'): string => {
+    const isIdentityBlocked = error.message && error.message.includes('identitytoolkit') && error.message.includes('blocked');
+  
+    if (isIdentityBlocked) {
+      return t('errorIdentityPlatformBlocked');
+    }
+  
+    if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes('CONFIGURATION_NOT_FOUND'))) {
+      return provider === 'google' ? t('errorFirebaseConfigGoogle') : t('errorFirebaseConfigEmail');
+    }
+  
+    return error.message || (provider === 'google' ? t('errorGoogleSignIn') : t('errorOccurred'));
+  };
+
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -22,11 +36,7 @@ export const Auth: React.FC = () => {
         await auth!.createUserWithEmailAndPassword(email, password);
       }
     } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.includes('CONFIGURATION_NOT_FOUND'))) {
-        setError(t('errorFirebaseConfigEmail'));
-      } else {
-        setError(err.message || t('errorOccurred'));
-      }
+      setError(getAuthErrorMessage(err, 'email'));
     } finally {
       setLoading(false);
     }
@@ -38,11 +48,7 @@ export const Auth: React.FC = () => {
     try {
       await auth!.signInWithPopup(googleProvider!);
     } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.includes('CONFIGURATION_NOT_FOUND'))) {
-        setError(t('errorFirebaseConfigGoogle'));
-      } else {
-        setError(err.message || t('errorGoogleSignIn'));
-      }
+      setError(getAuthErrorMessage(err, 'google'));
     } finally {
       setLoading(false);
     }

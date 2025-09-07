@@ -24,6 +24,7 @@ const translations = {
     signUp: 'Sign Up',
     errorFirebaseConfigEmail: 'Configuration error. Please enable Email/Password sign-in provider in your Firebase project.',
     errorFirebaseConfigGoogle: 'Configuration error. Please enable the Google sign-in provider in your Firebase project.',
+    errorIdentityPlatformBlocked: "Authentication failed. Please ensure the 'Identity Platform' API is enabled in your Google Cloud project.",
     errorGoogleSignIn: 'Failed to sign in with Google.',
     errorOccurred: 'An error occurred.',
     
@@ -321,6 +322,7 @@ const translations = {
     signUp: 'Kaydol',
     errorFirebaseConfigEmail: 'Yapılandırma hatası. Lütfen Firebase projenizde E-posta/Şifre ile giriş sağlayıcısını etkinleştirin.',
     errorFirebaseConfigGoogle: 'Yapılandırma hatası. Lütfen Firebase projenizde Google ile giriş sağlayıcısını etkinleştirin.',
+    errorIdentityPlatformBlocked: "Kimlik doğrulama başarısız oldu. Lütfen Google Cloud projenizde 'Identity Platform' API'sinin etkinleştirildiğinden emin olun.",
     errorGoogleSignIn: 'Google ile giriş yapılamadı.',
     errorOccurred: 'Bir hata oluştu.',
     
@@ -618,6 +620,7 @@ const translations = {
     signUp: 'Registrati',
     errorFirebaseConfigEmail: 'Errore di configurazione. Abilita il provider di accesso Email/Password nel tuo progetto Firebase.',
     errorFirebaseConfigGoogle: 'Errore di configurazione. Abilita il provider di accesso Google nel tuo progetto Firebase.',
+    errorIdentityPlatformBlocked: "Autenticazione fallita. Assicurati che l'API 'Identity Platform' sia abilitata nel tuo progetto Google Cloud.",
     errorGoogleSignIn: 'Accesso con Google non riuscito.',
     errorOccurred: 'Si è verificato un errore.',
     
@@ -914,6 +917,7 @@ const translations = {
     signUp: 'انشاء حساب',
     errorFirebaseConfigEmail: 'خطأ في الإعداد. يرجى تمكين مزود تسجيل الدخول بالبريد الإلكتروني/كلمة المرور في مشروع Firebase الخاص بك.',
     errorFirebaseConfigGoogle: 'خطأ في الإعداد. يرجى تمكين مزود تسجيل الدخول بجوجل في مشروع Firebase الخاص بك.',
+    errorIdentityPlatformBlocked: "فشل المصادقة. يرجى التأكد من تمكين واجهة برمجة تطبيقات 'Identity Platform' في مشروعك على Google Cloud.",
     errorGoogleSignIn: 'فشل تسجيل الدخول باستخدام جوجل.',
     errorOccurred: 'حدث خطأ ما.',
     
