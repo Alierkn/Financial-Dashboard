@@ -289,13 +289,14 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
 
             const docRef = monthlyDataRef.doc(targetMonthId);
             const docSnap = await docRef.get();
-
+            
+            // FIX: Conditionally add `installmentDetails` to avoid sending `undefined` to Firestore.
             const newExpense: Expense = {
                 id: `exp-${Date.now()}-${i}`,
                 amount: expenseAmount,
                 date: expenseDate.toISOString(),
                 status: i === 0 ? 'paid' : 'pending',
-                installmentDetails: isInstallment ? { installmentId: installmentId!, current: i + 1, total: installments } : undefined,
+                ...(isInstallment && { installmentDetails: { installmentId: installmentId!, current: i + 1, total: installments } }),
                 ...rest
             };
             
