@@ -35,12 +35,8 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
 
 
   useEffect(() => {
-    if (!aiRef.current) {
-      if (process.env.API_KEY) {
-        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      } else {
-        console.warn("Gemini API key not found. AI features are disabled.");
-      }
+    if (!aiRef.current && process.env.API_KEY) {
+      aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
     }
   }, []);
 
@@ -313,7 +309,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
                 onClick={() => setPaymentMethod('cash')}
                 className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'cash' ? 'bg-green-500/20 border-green-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                   <span className="text-white">{t('cash')}</span>
               </button>
               <button
@@ -321,68 +317,82 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
                 onClick={() => setPaymentMethod('credit-card')}
                 className={`flex items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'credit-card' ? 'bg-sky-500/20 border-sky-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'}`}
               >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-sky-400" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                   <span className="text-white">{t('card')}</span>
               </button>
             </div>
           </div>
-          <div>
-              <div className="flex items-center h-full pt-8">
-                  <input id="isInstallment" type="checkbox" checked={isInstallment} onChange={(e) => setIsInstallment(e.target.checked)} className="h-4 w-4 rounded border-slate-500 text-sky-500 focus:ring-sky-400 bg-slate-700"/>
-                  <label htmlFor="isInstallment" className="ml-2 block text-sm font-medium text-slate-300">{t('payInInstallments')}</label>
-              </div>
-          </div>
-        </div>
-        
-        {isInstallment && (
-            <div className="animate-fade-in">
-              <label htmlFor="installments" className="block text-sm font-medium text-slate-300 mb-1">{t('numberOfInstallments')}</label>
+          <div className="flex flex-col justify-between">
+            <label htmlFor="isInstallment" className="flex items-center cursor-pointer text-sm font-medium text-slate-300">
               <input
-                id="installments"
-                name="installments"
-                type="number"
-                value={installments}
-                onChange={(e) => {
-                  setInstallments(e.target.value);
-                  if (errors.installments) setErrors(prev => ({...prev, installments: undefined}));
-                }}
-                onBlur={handleBlur}
-                min="2"
-                className={`w-full p-2 bg-slate-700/50 text-white border rounded-lg focus:ring-2 outline-none transition-colors ${errors.installments ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-sky-500 focus:border-sky-500'}`}
-                aria-invalid={!!errors.installments}
-                aria-describedby="installments-error"
+                id="isInstallment"
+                type="checkbox"
+                checked={isInstallment}
+                onChange={(e) => setIsInstallment(e.target.checked)}
+                className="w-4 h-4 text-sky-600 bg-slate-700 border-slate-500 rounded focus:ring-sky-500"
               />
-              {errors.installments && <p id="installments-error" className="text-red-400 text-sm mt-1">{errors.installments}</p>}
-            </div>
-        )}
-        
-        <div>
-            <div className="flex items-center mb-2">
-                <p id="category-label" className="block text-sm font-medium text-slate-300">{t('category')}</p>
-                {isSuggesting && <div className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin ml-2"></div>}
-            </div>
-          <div role="radiogroup" aria-labelledby="category-label" className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {CATEGORIES.map(category => (
-              <button
-                type="button"
-                role="radio"
-                key={category.id}
-                onClick={() => handleCategoryClick(category.id)}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
-                    selectedCategory === category.id 
-                    ? 'bg-sky-500/20 border-sky-400' 
-                    : `bg-slate-700/50 border-slate-600 hover:border-slate-500 ${suggestedCategory === category.id ? 'border-sky-400 animate-suggestion' : ''}`
-                } ${errors.category && !selectedCategory ? 'border-red-500' : ''}`}
-                aria-checked={selectedCategory === category.id}
-              >
-                <category.icon className={`w-6 h-6 mb-1 ${category.color}`} />
-                <span className="text-xs text-white text-center">{t(`category_${category.id}`)}</span>
-              </button>
-            ))}
+              <span className="ml-2">{t('payInInstallments')}</span>
+            </label>
+            {isInstallment && (
+               <div className="mt-2 animate-fade-in">
+                 <label htmlFor="installments" className="sr-only">{t('numberOfInstallments')}</label>
+                 <input
+                   id="installments"
+                   name="installments"
+                   type="number"
+                   value={installments}
+                   onChange={(e) => {
+                    setInstallments(e.target.value);
+                    if(errors.installments) setErrors(prev => ({ ...prev, installments: undefined }));
+                   }}
+                   onBlur={handleBlur}
+                   min="2"
+                   className={`w-full p-2 text-sm bg-slate-700/50 text-white border rounded-lg focus:ring-2 outline-none transition-colors ${errors.installments ? 'border-red-500 focus:ring-red-500' : 'border-slate-600 focus:ring-sky-500'}`}
+                   aria-invalid={!!errors.installments}
+                   aria-describedby="installments-error"
+                 />
+               </div>
+            )}
           </div>
-          {errors.category && <p id="category-error" className="text-red-400 text-sm mt-2 text-center">{errors.category}</p>}
         </div>
-        <button type="submit" className="w-full bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSubmitting}>
+        {errors.installments && <p id="installments-error" className="text-red-400 text-sm">{errors.installments}</p>}
+
+        <div>
+          <p className="block text-sm font-medium text-slate-300 mb-2">{t('category')}</p>
+          <div className="flex flex-wrap gap-2 relative">
+            {isSuggesting && (
+                <div className="absolute -top-1 -left-1 w-[calc(100%+0.5rem)] h-[calc(100%+0.5rem)] bg-slate-800/50 rounded-lg flex items-center justify-center z-10">
+                   <div className="w-5 h-5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            )}
+            {CATEGORIES.map(category => {
+              const isSelected = selectedCategory === category.id;
+              const isSuggested = suggestedCategory === category.id;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleCategoryClick(category.id)}
+                  className={`flex items-center gap-2 py-2 px-3 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
+                    isSelected
+                      ? `bg-opacity-20 border-current ${category.color}`
+                      : 'bg-slate-700/50 border-slate-600 hover:border-slate-500 text-slate-300'
+                  } ${isSuggested ? 'animate-suggestion !border-sky-400' : ''}`}
+                  style={isSelected ? { color: category.hexColor, backgroundColor: `${category.hexColor}20` } : {}}
+                >
+                  <category.icon className="w-5 h-5" />
+                  <span>{t(`category_${category.id}`)}</span>
+                </button>
+              );
+            })}
+          </div>
+          {errors.category && <p className="text-red-400 text-sm mt-1">{errors.category}</p>}
+        </div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-gradient-to-r from-sky-500 to-violet-600 hover:from-sky-600 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-violet-500/30 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {isSubmitting ? t('adding') : t('addExpense')}
         </button>
       </form>

@@ -178,10 +178,8 @@ export const Summary: React.FC<SummaryProps> = ({
   const aiRef = useRef<GoogleGenAI | null>(null);
 
   useEffect(() => {
-    if (!aiRef.current) {
-      if (process.env.API_KEY) {
-        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      }
+    if (!aiRef.current && process.env.API_KEY) {
+      aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
     }
   }, []);
 
