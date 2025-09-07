@@ -205,6 +205,11 @@ const translations = {
     errorAiAdvice: 'Sorry, I was unable to generate advice at this time.',
     errorAiAnalysis: 'Sorry, I couldn\'t generate an analysis right now. Please try again later.',
 
+    // AI Errors
+    errorAiRateLimit: 'AI request limit reached. Please try again in a few moments.',
+    errorAiInvalidKey: 'AI configuration error: The API key is invalid or has expired.',
+    errorAiResourceExhausted: 'The AI service is currently busy. Please try again later.',
+    errorAiBadRequest: 'There was an issue with the AI request. Please check the input and try again.',
 
     // Trend Views
     cumulativeSpendingTrend: 'Cumulative Spending Trend',
@@ -503,6 +508,12 @@ const translations = {
     errorAiAdvice: 'Üzgünüm, şu anda tavsiye oluşturamadım.',
     errorAiAnalysis: 'Üzgünüm, şu anda bir analiz oluşturamadım. Lütfen daha sonra tekrar deneyin.',
 
+    // AI Errors
+    errorAiRateLimit: 'YZ istek limitine ulaşıldı. Lütfen bir süre sonra tekrar deneyin.',
+    errorAiInvalidKey: 'YZ yapılandırma hatası: API anahtarı geçersiz veya süresi dolmuş.',
+    errorAiResourceExhausted: 'YZ hizmeti şu anda meşgul. Lütfen daha sonra tekrar deneyin.',
+    errorAiBadRequest: 'YZ isteğinde bir sorun oluştu. Lütfen girdiyi kontrol edip tekrar deneyin.',
+
     // Trend Views
     cumulativeSpendingTrend: 'Kümülatif Harcama Trendi',
     cumulativeIncomeTrend: 'Kümülatif Gelir Trendi',
@@ -800,6 +811,12 @@ const translations = {
     getAdvice: 'Ottieni Consiglio',
     errorAiAdvice: 'Spiacente, non sono stato in grado di generare consigli in questo momento.',
     errorAiAnalysis: 'Spiacente, non sono riuscito a generare un\'analisi in questo momento. Riprova più tardi.',
+    
+    // AI Errors
+    errorAiRateLimit: 'Limite di richieste AI raggiunto. Riprova tra qualche istante.',
+    errorAiInvalidKey: 'Errore di configurazione AI: la chiave API non è valida o è scaduta.',
+    errorAiResourceExhausted: 'Il servizio AI è attualmente occupato. Riprova più tardi.',
+    errorAiBadRequest: 'Si è verificato un problema con la richiesta AI. Controlla l\'input e riprova.',
 
     // Trend Views
     cumulativeSpendingTrend: 'Andamento Spesa Cumulativa',
@@ -1097,6 +1114,12 @@ const translations = {
     getAdvice: 'احصل على نصيحة',
     errorAiAdvice: 'عذراً، لم أتمكن من إنشاء نصيحة في هذا الوقت.',
     errorAiAnalysis: 'عذراً، لم أتمكن من إنشاء تحليل الآن. يرجى المحاولة مرة أخرى لاحقًا.',
+
+    // AI Errors
+    errorAiRateLimit: 'تم الوصول إلى حد طلبات الذكاء الاصطناعي. يرجى المحاولة مرة أخرى بعد لحظات.',
+    errorAiInvalidKey: 'خطأ في تكوين الذكاء الاصطناعي: مفتاح API غير صالح أو منتهي الصلاحية.',
+    errorAiResourceExhausted: 'خدمة الذكاء الاصطناعي مشغولة حاليًا. يرجى المحاولة مرة أخرى لاحقًا.',
+    errorAiBadRequest: 'حدثت مشكلة في طلب الذكاء الاصطناعي. يرجى التحقق من الإدخال والمحاولة مرة أخرى.',
 
     // Trend Views
     cumulativeSpendingTrend: 'الاتجاه التراكمي للإنفاق',

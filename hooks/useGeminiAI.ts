@@ -5,11 +5,31 @@ import { useLanguage } from '../contexts/LanguageProvider';
 import type { CategoryId } from '../types';
 import { CATEGORIES } from '../constants';
 
-// Initialize the AI client at the module level for a single instance.
-const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
-if (!ai) {
-  console.warn("Gemini AI client could not be initialized. API key might be missing.");
-}
+// Hold the singleton instance. It will be initialized on first use.
+let aiClient: GoogleGenAI | null = null;
+
+/**
+ * Lazily initializes and returns the GoogleGenAI client instance.
+ * This prevents race conditions where the API key might not be available
+ * at module load time. It ensures the client is created only when first needed.
+ */
+const getAIClient = (): GoogleGenAI | null => {
+  // If the client is already initialized, return it.
+  if (aiClient) {
+    return aiClient;
+  }
+
+  // If the API key is available in the environment, create the new client.
+  if (process.env.API_KEY) {
+    aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    return aiClient;
+  } else {
+    // If the API key is missing, log an error. This is a critical failure.
+    console.error("Gemini AI client could not be initialized: API key is missing from window.process.env.");
+    return null;
+  }
+};
+
 
 type GeminiAIState<T> = {
   data: T | null;
@@ -27,10 +47,11 @@ export function useGeminiAI<T>() {
   const { t } = useLanguage();
 
   const processRequest = useCallback(async (
-    requestFn: () => Promise<any>,
-    errorMessage: string
+    requestExecutor: (client: GoogleGenAI) => Promise<any>,
+    errorMessageKey: string
   ) => {
-    if (!ai) {
+    const client = getAIClient();
+    if (!client) {
       const errorText = "AI client not initialized.";
       console.error(errorText);
       addToast(errorText, 'error');
@@ -40,13 +61,27 @@ export function useGeminiAI<T>() {
 
     setState({ data: null, isLoading: true, error: null });
     try {
-      const response = await requestFn();
+      const response = await requestExecutor(client);
       const responseText = response.text;
       setState({ data: responseText as T, isLoading: false, error: null });
       return responseText;
-    } catch (error) {
-      console.error(errorMessage, error);
-      const userFriendlyError = t(errorMessage);
+    } catch (error: any) {
+      console.error(`Gemini AI Request Failed (using fallback key '${errorMessageKey}'):`, error);
+
+      let userFriendlyErrorKey = errorMessageKey;
+      const errorMessage = error.message?.toLowerCase() || '';
+
+      if (errorMessage.includes('rate limit')) {
+        userFriendlyErrorKey = 'errorAiRateLimit';
+      } else if (errorMessage.includes('api key not valid')) {
+        userFriendlyErrorKey = 'errorAiInvalidKey';
+      } else if (errorMessage.includes('resource exhausted')) {
+        userFriendlyErrorKey = 'errorAiResourceExhausted';
+      } else if (errorMessage.includes('invalid argument') || errorMessage.includes('bad request')) {
+          userFriendlyErrorKey = 'errorAiBadRequest';
+      }
+      
+      const userFriendlyError = t(userFriendlyErrorKey);
       setState({ data: null, isLoading: false, error: userFriendlyError });
       addToast(userFriendlyError, 'error');
       return null;
@@ -55,7 +90,7 @@ export function useGeminiAI<T>() {
 
   const generateAnalysis = useCallback((prompt: string) => {
     return processRequest(
-      () => ai!.models.generateContent({
+      (client) => client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
       }),
@@ -68,7 +103,7 @@ export function useGeminiAI<T>() {
     const prompt = `Analyze this receipt image. Extract the total amount, the merchant name or a brief description, and suggest the most appropriate category from this list: [${categoryList}].`;
     
     const jsonString = await processRequest(
-      () => ai!.models.generateContent({
+      (client) => client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [
           { inlineData: { mimeType, data: base64ImageData } },
@@ -85,7 +120,6 @@ export function useGeminiAI<T>() {
             },
             required: ["amount", "description", "category"]
           },
-          // FIX: Moved systemInstruction into the config object.
           systemInstruction: "You are an expert receipt scanner. You must extract the requested information and provide it in the specified JSON format. If you cannot find a piece of information, return null for its value."
         }
       }),
@@ -110,7 +144,7 @@ export function useGeminiAI<T>() {
     const prompt = `Based on the expense description "${description}", which of these categories is most appropriate? Categories: [${categoryList}]. Respond with only one category ID from the list.`;
     
     return processRequest(
-      () => ai!.models.generateContent({
+      (client) => client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
       }),
@@ -120,7 +154,7 @@ export function useGeminiAI<T>() {
   
   const generateAdvice = useCallback((prompt: string) => {
     return processRequest(
-      () => ai!.models.generateContent({
+      (client) => client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
       }),
