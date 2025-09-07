@@ -5,22 +5,24 @@ import 'firebase/compat/firestore';
 // =================================================================================
 // Firebase Configuration
 // =================================================================================
-// This is a pre-configured Firebase project for demonstration purposes.
-// The application will work out-of-the-box with this configuration.
+// This configuration is explicitly set as per user request to ensure the application
+// is always connected to the correct Firebase project.
+// IT MUST NOT BE CHANGED.
 // =================================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyCV_xxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  authDomain: "pwa-finance-tracker-9d5a7.firebaseapp.com",
-  projectId: "pwa-finance-tracker-9d5a7",
-  storageBucket: "pwa-finance-tracker-9d5a7.appspot.com",
-  messagingSenderId: "33390393086",
-  appId: "1:33390393086:web:86b09bf331a106191a2e7c"
+  apiKey: "AIzaSyCSU0uhNCAiQvyvLM5uZxvOJi7TN34H5hQ",
+  authDomain: "financialdashboard-4b23e.firebaseapp.com",
+  projectId: "financialdashboard-4b23e",
+  storageBucket: "financialdashboard-4b23e.appspot.com",
+  messagingSenderId: "734257592555",
+  appId: "1:734257592555:web:c7bff06aef0de1361f26ae",
+  measurementId: "G-LMELYRSPNE"
 };
 
 
 // This check determines if the Firebase config has been filled out.
 // The app will show a setup screen until these values are changed.
-export const isFirebaseConfigured = !!firebaseConfig.projectId && firebaseConfig.projectId !== 'YOUR_PROJECT_ID_HERE';
+export const isFirebaseConfigured = !!firebaseConfig.projectId;
 
 // Initialize Firebase only if it hasn't been initialized yet.
 if (!firebase.apps.length) {

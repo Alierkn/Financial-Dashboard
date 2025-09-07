@@ -205,6 +205,10 @@ const translations = {
     errorAiAdvice: 'Sorry, I was unable to generate advice at this time.',
     errorAiAnalysis: 'Sorry, I couldn\'t generate an analysis right now. Please try again later.',
 
+    // AI Prompts
+    scanReceiptPrompt: "Analyze the attached receipt image. Extract the total amount, a brief description of the items or store, and classify it into one of the following categories: 'food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'other'. Provide the output in a clean JSON format with keys 'amount', 'description', and 'category'. The description should be concise. If the total amount is unclear, use 0. If the category is ambiguous, use 'other'.",
+    suggestCategoryPrompt: "Based on the expense description '{{description}}', suggest the most appropriate category from the following list: {{categories}}. Respond with only the category ID string (e.g., 'food', 'shopping'). Do not add any extra text or explanation.",
+
     // AI Errors
     errorAiRateLimit: 'AI request limit reached. Please try again in a few moments.',
     errorAiInvalidKey: 'AI configuration error: The API key is invalid or has expired.',
@@ -507,6 +511,10 @@ const translations = {
     getAdvice: 'Tavsiye İste',
     errorAiAdvice: 'Üzgünüm, şu anda tavsiye oluşturamadım.',
     errorAiAnalysis: 'Üzgünüm, şu anda bir analiz oluşturamadım. Lütfen daha sonra tekrar deneyin.',
+
+    // AI Prompts
+    scanReceiptPrompt: "Ekteki fiş resmini analiz et. Toplam tutarı, ürünlerin veya mağazanın kısa bir açıklamasını ve şu kategorilerden birine sınıflandır: 'food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'other'. Çıktıyı 'amount', 'description' ve 'category' anahtarlarıyla temiz bir JSON formatında sağla. Açıklama kısa ve öz olmalı. Toplam tutar belirsizse 0 kullan. Kategori belirsizse 'other' kullan.",
+    suggestCategoryPrompt: "Harcama açıklamasına ('{{description}}') dayanarak, şu listeden en uygun kategoriyi öner: {{categories}}. Yanıt olarak sadece kategori ID'sini (ör. 'food', 'shopping') gönder. Ekstra metin veya açıklama ekleme.",
 
     // AI Errors
     errorAiRateLimit: 'YZ istek limitine ulaşıldı. Lütfen bir süre sonra tekrar deneyin.',
@@ -812,6 +820,10 @@ const translations = {
     errorAiAdvice: 'Spiacente, non sono stato in grado di generare consigli in questo momento.',
     errorAiAnalysis: 'Spiacente, non sono riuscito a generare un\'analisi in questo momento. Riprova più tardi.',
     
+    // AI Prompts
+    scanReceiptPrompt: "Analizza l'immagine della ricevuta allegata. Estrai l'importo totale, una breve descrizione degli articoli o del negozio, e classificalo in una delle seguenti categorie: 'food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'other'. Fornisci l'output in un formato JSON pulito con le chiavi 'amount', 'description' e 'category'. La descrizione deve essere concisa. Se l'importo totale non è chiaro, usa 0. Se la categoria è ambigua, usa 'other'.",
+    suggestCategoryPrompt: "In base alla descrizione della spesa '{{description}}', suggerisci la categoria più appropriata dal seguente elenco: {{categories}}. Rispondi solo con la stringa dell'ID della categoria (es. 'food', 'shopping'). Non aggiungere testo o spiegazioni extra.",
+
     // AI Errors
     errorAiRateLimit: 'Limite di richieste AI raggiunto. Riprova tra qualche istante.',
     errorAiInvalidKey: 'Errore di configurazione AI: la chiave API non è valida o è scaduta.',
@@ -1114,6 +1126,10 @@ const translations = {
     getAdvice: 'احصل على نصيحة',
     errorAiAdvice: 'عذراً، لم أتمكن من إنشاء نصيحة في هذا الوقت.',
     errorAiAnalysis: 'عذراً، لم أتمكن من إنشاء تحليل الآن. يرجى المحاولة مرة أخرى لاحقًا.',
+
+    // AI Prompts
+    scanReceiptPrompt: "حلل صورة الإيصال المرفقة. استخرج المبلغ الإجمالي، ووصفًا موجزًا ​​للعناصر أو المتجر، وصنفه ضمن إحدى الفئات التالية: 'food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'other'. قدم المخرجات بتنسيق JSON نظيف مع المفاتيح 'amount' و 'description' و 'category'. يجب أن يكون الوصف موجزًا. إذا كان المبلغ الإجمالي غير واضح، فاستخدم 0. إذا كانت الفئة غامضة، فاستخدم 'other'.",
+    suggestCategoryPrompt: "بناءً على وصف المصروف '{{description}}'، اقترح الفئة الأنسب من القائمة التالية: {{categories}}. أجب فقط بسلسلة معرف الفئة (مثل 'food'، 'shopping'). لا تضف أي نص أو شرح إضافي.",
 
     // AI Errors
     errorAiRateLimit: 'تم الوصول إلى حد طلبات الذكاء الاصطناعي. يرجى المحاولة مرة أخرى بعد لحظات.',
