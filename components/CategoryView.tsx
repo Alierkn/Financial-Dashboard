@@ -49,8 +49,8 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
   const categoryData = useMemo(() => {
     const spendingByCategory: { [key: string]: number } = {};
     for (const expense of expenses) {
-      // DÜZELTME: Bekleyen taksitlerin kategori görünümünü etkilemesini önlemek için
-      // yalnızca ödenmiş harcamaları dahil et. Bu, özet verileriyle tutarlılığı sağlar.
+      // FIX: To prevent pending installments from affecting the category view,
+      // only include paid expenses. This ensures consistency with summary data.
       if (expense.status !== 'paid') continue;
       
       if (!spendingByCategory[expense.category]) {

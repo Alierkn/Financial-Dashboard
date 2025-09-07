@@ -34,134 +34,115 @@ const getAIClient = (): GoogleGenAI | null => {
 type GeminiAIState<T> = {
   data: T | null;
   isLoading: boolean;
-  error: string | null;
 };
 
-export function useGeminiAI<T>() {
+type UseGeminiAIResult<T> = GeminiAIState<T> & {
+  scanReceipt: (base64Image: string, mimeType: string) => Promise<{ amount: number; description: string; category: CategoryId; } | null>;
+  suggestCategory: (description: string) => Promise<string | null>;
+  generateAnalysis: (prompt: string) => Promise<void>;
+  generateAdvice: (prompt: string) => Promise<void>;
+};
+
+export function useGeminiAI<T = any>(): UseGeminiAIResult<T> {
   const [state, setState] = useState<GeminiAIState<T>>({
     data: null,
     isLoading: false,
-    error: null,
   });
   const { addToast } = useToast();
   const { t } = useLanguage();
 
-  const processRequest = useCallback(async (
-    requestExecutor: (client: GoogleGenAI) => Promise<any>,
-    errorMessageKey: string
-  ) => {
+  const handleAIData = (data: any) => {
+    setState({ data, isLoading: false });
+    return data;
+  };
+
+  const handleAIError = (error: any, defaultMessageKey: string): null => {
+    console.error("Gemini AI Error:", error);
+    const errorMessage = error.message || 'Unknown error';
+    let toastMessage = t(defaultMessageKey);
+
+    if (errorMessage.includes('429')) { // Resource exhausted or rate limit
+        toastMessage = t('errorAiResourceExhausted');
+    } else if (errorMessage.toLowerCase().includes('api key not valid')) {
+        toastMessage = t('errorAiInvalidKey');
+    } else if (errorMessage.toLowerCase().includes('rate limit')) {
+        toastMessage = t('errorAiRateLimit');
+    } else if (errorMessage.toLowerCase().includes('bad request')) {
+        toastMessage = t('errorAiBadRequest');
+    }
+
+    addToast(toastMessage, 'error');
+    setState({ data: null, isLoading: false });
+    return null;
+  };
+  
+  const callAI = useCallback(async <R>(prompt: string | { parts: any[] }, config: any, successCallback: (response: any) => R, errorMessageKey: string): Promise<R | null> => {
     const client = getAIClient();
     if (!client) {
-      const errorText = "AI client not initialized.";
-      console.error(errorText);
-      addToast(errorText, 'error');
-      setState({ data: null, isLoading: false, error: errorText });
+      addToast(t('errorAiInvalidKey'), 'error');
       return null;
     }
-
-    setState({ data: null, isLoading: true, error: null });
+    
+    setState(prevState => ({ ...prevState, isLoading: true }));
+    
     try {
-      const response = await requestExecutor(client);
-      const responseText = response.text;
-      setState({ data: responseText as T, isLoading: false, error: null });
-      return responseText;
-    } catch (error: any) {
-      console.error(`Gemini AI Request Failed (using fallback key '${errorMessageKey}'):`, error);
-
-      let userFriendlyErrorKey = errorMessageKey;
-      const errorMessage = error.message?.toLowerCase() || '';
-
-      if (errorMessage.includes('rate limit')) {
-        userFriendlyErrorKey = 'errorAiRateLimit';
-      } else if (errorMessage.includes('api key not valid')) {
-        userFriendlyErrorKey = 'errorAiInvalidKey';
-      } else if (errorMessage.includes('resource exhausted')) {
-        userFriendlyErrorKey = 'errorAiResourceExhausted';
-      } else if (errorMessage.includes('invalid argument') || errorMessage.includes('bad request')) {
-          userFriendlyErrorKey = 'errorAiBadRequest';
-      }
-      
-      const userFriendlyError = t(userFriendlyErrorKey);
-      setState({ data: null, isLoading: false, error: userFriendlyError });
-      addToast(userFriendlyError, 'error');
-      return null;
+      const response = await client.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt as any,
+        ...config,
+      });
+      return successCallback(response);
+    } catch (error) {
+      return handleAIError(error, errorMessageKey);
     }
-  }, [addToast, t]);
+  }, [t]);
 
-  const generateAnalysis = useCallback((prompt: string) => {
-    return processRequest(
-      (client) => client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      }),
-      'errorAiAnalysis'
-    );
-  }, [processRequest]);
-
-  const scanReceipt = useCallback(async (base64ImageData: string, mimeType: string) => {
-    const categoryList = CATEGORIES.map(c => `"${c.id}"`).join(', ');
-    const prompt = `Analyze this receipt image. Extract the total amount, the merchant name or a brief description, and suggest the most appropriate category from this list: [${categoryList}].`;
+  const scanReceipt = useCallback(async (base64Image: string, mimeType: string) => {
+    const prompt = {
+      parts: [
+        { text: t('scanReceiptPrompt') },
+        { inlineData: { mimeType, data: base64Image } },
+      ],
+    };
     
-    const jsonString = await processRequest(
-      (client) => client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: { parts: [
-          { inlineData: { mimeType, data: base64ImageData } },
-          { text: prompt }
-        ]},
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              amount: { type: Type.NUMBER, description: "The total amount from the receipt. Should be a number." },
-              description: { type: Type.STRING, description: "The merchant name or a brief summary of the items. Should be a string." },
-              category: { type: Type.STRING, description: `The most fitting category. Must be one of: ${categoryList}` }
-            },
-            required: ["amount", "description", "category"]
+    const config = {
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            amount: { type: Type.NUMBER },
+            description: { type: Type.STRING },
+            category: { type: Type.STRING, enum: CATEGORIES.map(c => c.id) },
           },
-          systemInstruction: "You are an expert receipt scanner. You must extract the requested information and provide it in the specified JSON format. If you cannot find a piece of information, return null for its value."
-        }
-      }),
-      'errorAiAnalysis' // Re-using a generic analysis error for now
-    );
-    
-    if (jsonString) {
-      try {
-        const parsed = JSON.parse(jsonString);
-        return parsed as { amount: number; description: string; category: CategoryId };
-      } catch (e) {
-        console.error("Failed to parse JSON from receipt scan:", e);
-        addToast("AI returned an invalid format. Please enter manually.", 'error');
-        return null;
+          required: ["amount", "description", "category"]
+        },
       }
-    }
-    return null;
-  }, [processRequest, addToast, t]);
+    };
+    
+    return callAI(prompt, config, (response) => {
+        try {
+            const jsonString = response.text.trim();
+            const parsed = JSON.parse(jsonString);
+            return handleAIData(parsed);
+        } catch (e) {
+            return handleAIError(e, 'errorAiAnalysis');
+        }
+    }, 'errorAiAnalysis');
+  }, [callAI, t]);
 
   const suggestCategory = useCallback((description: string) => {
-    const categoryList = CATEGORIES.map(c => c.id).join(', ');
-    const prompt = `Based on the expense description "${description}", which of these categories is most appropriate? Categories: [${categoryList}]. Respond with only one category ID from the list.`;
-    
-    return processRequest(
-      (client) => client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      }),
-      'errorAiAnalysis' // A specific error could be added if needed
-    );
-  }, [processRequest]);
+      const prompt = t('suggestCategoryPrompt', { description, categories: CATEGORIES.map(c => c.id).join(', ') });
+      return callAI(prompt, {}, (response) => handleAIData(response.text.trim()), 'errorAiAnalysis');
+  }, [callAI, t]);
+
+  const generateAnalysis = useCallback(async (prompt: string) => {
+      await callAI(prompt, {}, (response) => handleAIData(response.text), 'errorAiAnalysis');
+  }, [callAI]);
   
-  const generateAdvice = useCallback((prompt: string) => {
-    return processRequest(
-      (client) => client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      }),
-      'errorAiAdvice'
-    );
-  }, [processRequest]);
+  const generateAdvice = useCallback(async (prompt: string) => {
+      await callAI(prompt, {}, (response) => handleAIData(response.text), 'errorAiAdvice');
+  }, [callAI]);
 
-
-  return { ...state, generateAnalysis, scanReceipt, suggestCategory, generateAdvice };
+  return { ...state, scanReceipt, suggestCategory, generateAnalysis, generateAdvice };
 }

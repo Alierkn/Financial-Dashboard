@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
 import { useExchangeRates } from '../hooks/useExchangeRates';
-import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId, RecurringTransaction } from '../types';
+import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId, RecurringTransaction, IncomeCategoryId } from '../types';
 import { CURRENCIES } from '../constants';
 import { Dashboard } from './Dashboard';
 import { MonthlySetup } from './MonthlySetup';
@@ -142,7 +142,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
           } else { // income
              const newIncome: IncomeTransaction = {
                 id: `inc-rec-${Date.now()}`, name: `${rt.description} (${t('recurring')})`, amount: rt.amount,
-                date: nextExecutionDate.toISOString(), category: rt.category as any, status: 'pending',
+                date: nextExecutionDate.toISOString(), category: rt.category as IncomeCategoryId, status: 'pending',
              };
              if (data) { batch.update(docRef, { incomeTransactions: firebase.firestore.FieldValue.arrayUnion(newIncome) }); }
              else { /* Create new month doc if needed */ }
