@@ -1,9 +1,7 @@
-
-
 import React, { useState, useMemo } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
-import type { MonthlyData, Expense, Currency, IncomeSource, IncomeTransaction, CategoryId } from '../types';
+import type { MonthlyData, Expense, Currency, IncomeSource, IncomeTransaction, CategoryId, RecurringTransaction } from '../types';
 import { Summary } from './Summary';
 import { AddExpenseForm } from './AddExpenseForm';
 import { ExpenseList } from './ExpenseList';
@@ -12,6 +10,7 @@ import { IncomeView } from './IncomeView';
 import { CurrencyConverter } from './CurrencyConverter';
 import { ExpenseTrendView } from './ExpenseTrendView';
 import { IncomeTrendView } from './IncomeTrendView';
+import { RecurringView } from './RecurringView'; // New
 import { CATEGORIES, INCOME_CATEGORIES } from '../constants';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
@@ -23,6 +22,7 @@ enum View {
     Income,
     Trend,
     IncomeTrend,
+    Recurring,
 }
 
 interface MonthlyViewProps {
@@ -30,6 +30,7 @@ interface MonthlyViewProps {
     user: firebase.User;
     monthData: MonthlyData;
     incomeSources: IncomeSource[];
+    recurringTransactions: RecurringTransaction[]; // New
     onAddExpense: (expenseData: {
         amount: number;
         description: string;
@@ -52,6 +53,8 @@ interface MonthlyViewProps {
     onUpdateIncomeGoal: (goal: number) => Promise<boolean>;
     onBackToDashboard: () => void;
     onSignOut: () => void;
+    onAddRecurringTransaction: (transaction: Omit<RecurringTransaction, 'id' | 'nextExecutionDate'>) => Promise<boolean>; // New
+    onDeleteRecurringTransaction: (id: string) => Promise<void>; // New
     displayCurrency: Currency;
     onDisplayCurrencyChange: (currency: Currency) => void;
     conversionRate: number;
@@ -63,15 +66,17 @@ interface MonthlyViewProps {
     confirmingPaymentId: string | null;
     deletingSourceId: string | null;
     deletingTransactionId: string | null;
+    deletingRecurringId: string | null; // New
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
     const { 
-        user, monthData, incomeSources, onAddExpense, onDeleteExpense, onConfirmPayment,
+        user, monthData, incomeSources, recurringTransactions, onAddExpense, onDeleteExpense, onConfirmPayment,
         onAddIncomeSource, onDeleteIncomeSource, onUpdateIncomeSource, onAddIncomeTransaction, onDeleteIncomeTransaction,
         onUpdateIncomeTransactionStatus, onUpdateCategoryBudgets, onUpdateCategoryColors, categoryColors, onUpdateIncomeGoal,
-        onBackToDashboard, onSignOut, displayCurrency, onDisplayCurrencyChange, conversionRate, ratesLoading, ratesError,
-        isSubmitting, submitError, deletingExpenseId, confirmingPaymentId, deletingSourceId, deletingTransactionId
+        onBackToDashboard, onSignOut, onAddRecurringTransaction, onDeleteRecurringTransaction, displayCurrency, onDisplayCurrencyChange,
+        conversionRate, ratesLoading, ratesError, isSubmitting, submitError, deletingExpenseId, confirmingPaymentId,
+        deletingSourceId, deletingTransactionId, deletingRecurringId,
     } = props;
   
     const [activeView, setActiveView] = useState<View>(View.List);
@@ -156,6 +161,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                         </p>
                         <button onClick={onSignOut} className="text-sm bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">{t('signOut')}</button>
                     </div>
+                    {/* FIX: Corrected prop name from onDisplayCurrencyChange to onCurrencyChange to match CurrencyConverterProps. */}
                     <CurrencyConverter 
                         selectedCurrency={displayCurrency}
                         onCurrencyChange={onDisplayCurrencyChange}
@@ -201,6 +207,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                             <button onClick={() => setActiveView(View.Category)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Category ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('categories')}</button>
                             <button onClick={() => setActiveView(View.Income)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Income ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('income')}</button>
                             <button onClick={() => setActiveView(View.IncomeTrend)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.IncomeTrend ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('incomeTrend')}</button>
+                             <button onClick={() => setActiveView(View.Recurring)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Recurring ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('recurring')}</button>
                         </div>
                         
                         <div className="max-h-[420px] overflow-y-auto pr-2">
@@ -236,6 +243,15 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                                     conversionRate={conversionRate} 
                                     month={monthData.month} 
                                     year={monthData.year} 
+                                />
+                            ) : activeView === View.Recurring ? (
+                                <RecurringView
+                                    recurringTransactions={recurringTransactions}
+                                    onAddTransaction={onAddRecurringTransaction}
+                                    onDeleteTransaction={onDeleteRecurringTransaction}
+                                    isSubmitting={isSubmitting}
+                                    deletingRecurringId={deletingRecurringId}
+                                    baseCurrency={monthData.currency}
                                 />
                             ) : null}
                         </div>

@@ -1,10 +1,8 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
 import { useExchangeRates } from '../hooks/useExchangeRates';
-import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId } from '../types';
+import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId, RecurringTransaction } from '../types';
 import { CURRENCIES } from '../constants';
 import { Dashboard } from './Dashboard';
 import { MonthlySetup } from './MonthlySetup';
@@ -42,6 +40,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const { addToast } = useToast();
   const [allMonthlyData, setAllMonthlyData] = useState<MonthlyData[]>([]);
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(CURRENCIES[0]);
   const [categoryColors, setCategoryColors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
@@ -59,9 +58,11 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
+  const [deletingRecurringId, setDeletingRecurringId] = useState<string | null>(null);
 
   const monthlyDataRef = useMemo(() => db!.collection('users').doc(user.uid).collection('monthlyData'), [user.uid]);
   const incomeSourcesRef = useMemo(() => db!.collection('users').doc(user.uid).collection('incomeSources'), [user.uid]);
+  const recurringTransactionsRef = useMemo(() => db!.collection('users').doc(user.uid).collection('recurringTransactions'), [user.uid]);
   const preferencesRef = useMemo(() => db!.collection('users').doc(user.uid).collection('preferences').doc('main'), [user.uid]);
 
   useEffect(() => {
@@ -88,6 +89,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       setIncomeSources(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as IncomeSource)));
     }, (error) => handleError(error, 'income sources'));
     
+    const unsubscribeRecurring = recurringTransactionsRef.onSnapshot(snapshot => {
+      setRecurringTransactions(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as RecurringTransaction)));
+    }, (error) => handleError(error, 'recurring transactions'));
+
     const unsubscribePreferences = preferencesRef.onSnapshot(doc => {
         if (doc.exists) {
             const prefs = doc.data();
@@ -100,8 +105,70 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       unsubscribeMonthlyData();
       unsubscribeIncomeSources();
       unsubscribePreferences();
+      unsubscribeRecurring();
     };
-  }, [monthlyDataRef, incomeSourcesRef, preferencesRef, t, loading]);
+  }, [monthlyDataRef, incomeSourcesRef, preferencesRef, recurringTransactionsRef, t, loading]);
+
+  useEffect(() => {
+    if (loading || recurringTransactions.length === 0) return;
+    
+    const checkAndCreateRecurringTransactions = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const batch = db!.batch();
+      let hasUpdates = false;
+
+      for (const rt of recurringTransactions) {
+        let nextExecutionDate = new Date(rt.nextExecutionDate);
+        
+        while (nextExecutionDate <= today) {
+          hasUpdates = true;
+          const targetYear = nextExecutionDate.getFullYear();
+          const targetMonth = nextExecutionDate.getMonth() + 1;
+          const targetMonthId = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+          
+          const docRef = monthlyDataRef.doc(targetMonthId);
+          const docSnap = await docRef.get();
+          const data = docSnap.data() as MonthlyData | undefined;
+
+          if (rt.type === 'expense') {
+             const newExpense: Expense = {
+                id: `exp-rec-${Date.now()}`, amount: rt.amount, date: nextExecutionDate.toISOString(),
+                description: `${rt.description} (${t('recurring')})`, category: rt.category as CategoryId,
+                paymentMethod: 'credit-card', status: 'pending',
+             };
+             if (data) { batch.update(docRef, { expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) }); }
+             else { /* Create new month doc if needed - this case is complex, will address if required by users */ }
+          } else { // income
+             const newIncome: IncomeTransaction = {
+                id: `inc-rec-${Date.now()}`, name: `${rt.description} (${t('recurring')})`, amount: rt.amount,
+                date: nextExecutionDate.toISOString(), category: rt.category as any, status: 'pending',
+             };
+             if (data) { batch.update(docRef, { incomeTransactions: firebase.firestore.FieldValue.arrayUnion(newIncome) }); }
+             else { /* Create new month doc if needed */ }
+          }
+
+          const newNextDate = new Date(nextExecutionDate);
+          newNextDate.setMonth(newNextDate.getMonth() + 1);
+          nextExecutionDate = newNextDate;
+          batch.update(recurringTransactionsRef.doc(rt.id), { nextExecutionDate: newNextDate.toISOString().slice(0, 10) });
+        }
+      }
+      
+      if (hasUpdates) {
+        try {
+          await batch.commit();
+          addToast(t('recurringTransactionsUpdated'), 'success');
+        } catch (error) {
+          console.error("Error processing recurring transactions:", error);
+          addToast(t('errorProcessingRecurring'), 'error');
+        }
+      }
+    };
+    
+    checkAndCreateRecurringTransactions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, recurringTransactions]); // Run only when data is loaded
 
   const activeMonthData = useMemo(() => allMonthlyData.find(d => d.id === activeMonthId) || null, [allMonthlyData, activeMonthId]);
   const allAvailableYears = useMemo(() => Array.from(new Set(allMonthlyData.map(d => d.year))).sort((a, b) => b - a), [allMonthlyData]);
@@ -401,6 +468,40 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
     return result !== null;
   };
 
+  const handleAddRecurringTransaction = async (transaction: Omit<RecurringTransaction, 'id' | 'nextExecutionDate'>) => {
+    const nextExecutionDate = new Date(transaction.startDate);
+    // Ensure next execution is not in the past relative to start date
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    while (nextExecutionDate < today) {
+        nextExecutionDate.setMonth(nextExecutionDate.getMonth() + 1);
+    }
+
+    const newTransaction = {
+      ...transaction,
+      nextExecutionDate: nextExecutionDate.toISOString().slice(0, 10),
+    };
+
+    const result = await handleFirestoreOp(
+      () => recurringTransactionsRef.add(newTransaction),
+      t('successRecurringAdded'),
+      t('errorRecurringAdd')
+    );
+    return result !== null;
+  };
+
+  const handleDeleteRecurringTransaction = async (id: string) => {
+    if (window.confirm(t('confirmDeleteRecurring'))) {
+        setDeletingRecurringId(id);
+        await handleFirestoreOp(
+            () => recurringTransactionsRef.doc(id).delete(),
+            t('successRecurringDeleted'),
+            t('errorRecurringDelete')
+        );
+        setDeletingRecurringId(null);
+    }
+  };
+
   // View Navigation
   const handleViewMonth = (monthId: string) => { setActiveMonthId(monthId); setCurrentView('monthly'); };
   const handleViewAnnual = (year: number) => { setActiveYear(year); setCurrentView('annual'); };
@@ -438,6 +539,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
                   user={user}
                   monthData={activeMonthData}
                   incomeSources={incomeSources}
+                  recurringTransactions={recurringTransactions}
                   onAddExpense={handleAddExpense}
                   onDeleteExpense={handleDeleteExpense}
                   onConfirmPayment={handleConfirmPayment}
@@ -453,6 +555,8 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
                   onUpdateIncomeGoal={handleUpdateIncomeGoal}
                   onBackToDashboard={handleBackToDashboard}
                   onSignOut={handleSignOut}
+                  onAddRecurringTransaction={handleAddRecurringTransaction}
+                  onDeleteRecurringTransaction={handleDeleteRecurringTransaction}
                   displayCurrency={displayCurrency}
                   onDisplayCurrencyChange={handleDisplayCurrencyChange}
                   conversionRate={conversionRate}
@@ -464,6 +568,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
                   confirmingPaymentId={confirmingPaymentId}
                   deletingSourceId={deletingSourceId}
                   deletingTransactionId={deletingTransactionId}
+                  deletingRecurringId={deletingRecurringId}
                 />;
       case 'annual':
         if (!activeYear) return <ErrorDisplay message="Selected year not found." />;

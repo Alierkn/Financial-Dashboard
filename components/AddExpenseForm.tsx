@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { GoogleGenAI } from "@google/genai";
 // FIX: Import CategoryId to strongly type the selected category state.
 import type { CategoryId } from '../types';
 import { CATEGORIES } from '../constants';
@@ -25,6 +26,65 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
   const [installments, setInstallments] = useState('2');
   const [errors, setErrors] = useState<{ amount?: string; description?: string; category?: string; installments?: string; }>({});
   const { t } = useLanguage();
+  
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [suggestedCategory, setSuggestedCategory] = useState<CategoryId | null>(null);
+  const aiRef = useRef<GoogleGenAI | null>(null);
+
+  useEffect(() => {
+    if (!aiRef.current) {
+      if (process.env.API_KEY) {
+        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      } else {
+        console.warn("Gemini API key not found. Category suggestion feature is disabled.");
+      }
+    }
+  }, []);
+
+  const getCategorySuggestion = useCallback(async (text: string) => {
+    if (!aiRef.current || text.trim().length < 5) return;
+    setIsSuggesting(true);
+    setSuggestedCategory(null);
+    try {
+      const categoryList = CATEGORIES.map(c => c.id).join(', ');
+      const prompt = `Based on the expense description "${text}", which of these categories is most appropriate? Categories: [${categoryList}]. Respond with only one category ID from the list.`;
+      
+      const response = await aiRef.current.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      });
+
+      const resultText = response.text.trim().toLowerCase();
+      const matchedCategory = CATEGORIES.find(c => c.id === resultText);
+      if (matchedCategory) {
+        setSuggestedCategory(matchedCategory.id);
+      }
+    } catch (error) {
+      console.error("Error getting category suggestion:", error);
+    } finally {
+      setIsSuggesting(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!description) {
+      setSuggestedCategory(null);
+      return;
+    }
+    const handler = setTimeout(() => {
+      getCategorySuggestion(description);
+    }, 500); // 500ms debounce
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [description, getCategorySuggestion]);
+
+  const handleCategoryClick = (category: CategoryId) => {
+    setSelectedCategory(category);
+    setSuggestedCategory(null);
+    if (errors.category) setErrors(prev => ({ ...prev, category: undefined }));
+  };
 
   const validateField = (name: 'amount' | 'description' | 'installments', value: string) => {
     switch (name) {
@@ -194,18 +254,22 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
         )}
         
         <div>
-          <p id="category-label" className="block text-sm font-medium text-slate-300 mb-2">{t('category')}</p>
+            <div className="flex items-center mb-2">
+                <p id="category-label" className="block text-sm font-medium text-slate-300">{t('category')}</p>
+                {isSuggesting && <div className="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin ml-2"></div>}
+            </div>
           <div role="radiogroup" aria-labelledby="category-label" className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {CATEGORIES.map(category => (
               <button
                 type="button"
                 role="radio"
                 key={category.id}
-                onClick={() => {
-                    setSelectedCategory(category.id);
-                    if (errors.category) setErrors(prev => ({...prev, category: undefined}));
-                }}
-                className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${selectedCategory === category.id ? 'bg-sky-500/20 border-sky-400' : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'} ${errors.category && !selectedCategory ? 'border-red-500' : ''}`}
+                onClick={() => handleCategoryClick(category.id)}
+                className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
+                    selectedCategory === category.id 
+                    ? 'bg-sky-500/20 border-sky-400' 
+                    : `bg-slate-700/50 border-slate-600 hover:border-slate-500 ${suggestedCategory === category.id ? 'border-sky-400 animate-suggestion' : ''}`
+                } ${errors.category && !selectedCategory ? 'border-red-500' : ''}`}
                 aria-checked={selectedCategory === category.id}
               >
                 <category.icon className={`w-6 h-6 mb-1 ${category.color}`} />

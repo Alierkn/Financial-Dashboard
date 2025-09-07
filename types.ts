@@ -66,3 +66,16 @@ export interface MonthlyData {
   incomeGoal?: number;
   categoryBudgets?: { [key: string]: number };
 }
+
+export type RecurringTransactionType = 'expense' | 'income';
+
+export interface RecurringTransaction {
+  id: string;
+  description: string;
+  amount: number;
+  category: CategoryId | IncomeCategoryId;
+  type: RecurringTransactionType;
+  frequency: 'monthly';
+  startDate: string; // ISO string "YYYY-MM-DD"
+  nextExecutionDate: string; // ISO string "YYYY-MM-DD"
+}

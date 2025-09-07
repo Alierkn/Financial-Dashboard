@@ -79,6 +79,7 @@ const translations = {
     categories: 'Categories',
     income: 'Income',
     incomeTrend: 'Income Trend',
+    recurring: 'Recurring',
 
     // Summary
     totalSpent: 'Total Spent',
@@ -174,6 +175,18 @@ const translations = {
     errorInvalidDate: 'Please select a valid date for the transaction.',
     confirmDeleteSource: 'Are you sure you want to delete the income source "{{name}}"? This action cannot be undone.',
 
+    // Recurring View
+    manageRecurring: 'Manage Recurring Transactions',
+    addRecurring: 'Add Recurring Transaction',
+    transactionType: 'Transaction Type',
+    startDate: 'Start Date',
+    add: 'Add',
+    noRecurringTransactions: 'No recurring transactions have been set up yet.',
+    confirmDeleteRecurring: 'Are you sure you want to delete this recurring transaction? It will no longer be automatically added in the future.',
+    nextOn: 'Next on: {{date}}',
+    recurringExpenses: 'Recurring Expenses',
+    recurringIncomes: 'Recurring Incomes',
+
     // Trend Views
     cumulativeSpendingTrend: 'Cumulative Spending Trend',
     cumulativeIncomeTrend: 'Cumulative Income Trend',
@@ -248,6 +261,12 @@ const translations = {
     errorDeleteMonth: 'Failed to delete month.',
     successPaymentConfirmed: 'Payment confirmed successfully!',
     errorConfirmingPayment: 'Error confirming payment.',
+    recurringTransactionsUpdated: 'Recurring transactions have been updated.',
+    errorProcessingRecurring: 'Failed to process recurring transactions.',
+    successRecurringAdded: 'Recurring transaction added.',
+    errorRecurringAdd: 'Failed to add recurring transaction.',
+    successRecurringDeleted: 'Recurring transaction deleted.',
+    errorRecurringDelete: 'Failed to delete recurring transaction.',
     
     // Categories
     category_food: 'Food',
@@ -339,6 +358,7 @@ const translations = {
     categories: 'Kategoriler',
     income: 'Gelir',
     incomeTrend: 'Gelir Trendi',
+    recurring: 'Tekrarlayan',
 
     // Summary
     totalSpent: 'Toplam Harcama',
@@ -433,6 +453,18 @@ const translations = {
     errorEnterSourceName: 'Lütfen bir kaynak adı girin.',
     errorInvalidDate: 'Lütfen işlem için geçerli bir tarih seçin.',
     confirmDeleteSource: '"{{name}}" adlı gelir kaynağını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+    
+    // Recurring View
+    manageRecurring: 'Tekrarlayan İşlemleri Yönet',
+    addRecurring: 'Tekrarlayan İşlem Ekle',
+    transactionType: 'İşlem Türü',
+    startDate: 'Başlangıç Tarihi',
+    add: 'Ekle',
+    noRecurringTransactions: 'Henüz tekrarlayan işlem oluşturulmamış.',
+    confirmDeleteRecurring: 'Bu tekrarlayan işlemi silmek istediğinizden emin misiniz? Gelecekte otomatik olarak eklenmeyecektir.',
+    nextOn: 'Sıradaki: {{date}}',
+    recurringExpenses: 'Tekrarlayan Giderler',
+    recurringIncomes: 'Tekrarlayan Gelirler',
 
     // Trend Views
     cumulativeSpendingTrend: 'Kümülatif Harcama Trendi',
@@ -508,6 +540,13 @@ const translations = {
     errorDeleteMonth: 'Aylık bütçe silinemedi.',
     successPaymentConfirmed: 'Ödeme başarıyla onaylandı!',
     errorConfirmingPayment: 'Ödeme onaylanırken bir hata oluştu.',
+    recurringTransactionsUpdated: 'Tekrarlayan işlemler güncellendi.',
+    errorProcessingRecurring: 'Tekrarlayan işlemler işlenemedi.',
+    successRecurringAdded: 'Tekrarlayan işlem eklendi.',
+    errorRecurringAdd: 'Tekrarlayan işlem eklenemedi.',
+    successRecurringDeleted: 'Tekrarlayan işlem silindi.',
+    errorRecurringDelete: 'Tekrarlayan işlem silinemedi.',
+
 
     // Categories
     category_food: 'Gıda',
@@ -599,6 +638,7 @@ const translations = {
     categories: 'Categorie',
     income: 'Entrate',
     incomeTrend: 'Andamento Entrate',
+    recurring: 'Ricorrenti',
 
     // Summary
     totalSpent: 'Spesa Totale',
@@ -694,6 +734,18 @@ const translations = {
     errorInvalidDate: 'Seleziona una data valida per la transazione.',
     confirmDeleteSource: 'Sei sicuro di voler eliminare la fonte di reddito "{{name}}"? Questa azione non può essere annullata.',
 
+    // Recurring View
+    manageRecurring: 'Gestisci Transazioni Ricorrenti',
+    addRecurring: 'Aggiungi Transazione Ricorrente',
+    transactionType: 'Tipo di Transazione',
+    startDate: 'Data di Inizio',
+    add: 'Aggiungi',
+    noRecurringTransactions: 'Nessuna transazione ricorrente è stata ancora impostata.',
+    confirmDeleteRecurring: 'Sei sicuro di voler eliminare questa transazione ricorrente? Non verrà più aggiunta automaticamente in futuro.',
+    nextOn: 'Prossima il: {{date}}',
+    recurringExpenses: 'Spese Ricorrenti',
+    recurringIncomes: 'Entrate Ricorrenti',
+
     // Trend Views
     cumulativeSpendingTrend: 'Andamento Spesa Cumulativa',
     cumulativeIncomeTrend: 'Andamento Reddito Cumulativo',
@@ -768,6 +820,12 @@ const translations = {
     errorDeleteMonth: 'Eliminazione del mese non riuscita.',
     successPaymentConfirmed: 'Pagamento confermato con successo!',
     errorConfirmingPayment: 'Errore durante la conferma del pagamento.',
+    recurringTransactionsUpdated: 'Le transazioni ricorrenti sono state aggiornate.',
+    errorProcessingRecurring: 'Elaborazione delle transazioni ricorrenti non riuscita.',
+    successRecurringAdded: 'Transazione ricorrente aggiunta.',
+    errorRecurringAdd: 'Aggiunta della transazione ricorrente non riuscita.',
+    successRecurringDeleted: 'Transazione ricorrente eliminata.',
+    errorRecurringDelete: 'Eliminazione della transazione ricorrente non riuscita.',
     
     // Categories
     category_food: 'Cibo',
@@ -859,6 +917,7 @@ const translations = {
     categories: 'الفئات',
     income: 'الدخل',
     incomeTrend: 'اتجاه الدخل',
+    recurring: 'متكرر',
 
     // Summary
     totalSpent: 'إجمالي المصروفات',
@@ -954,6 +1013,18 @@ const translations = {
     errorInvalidDate: 'الرجاء تحديد تاريخ صالح للمعاملة.',
     confirmDeleteSource: 'هل أنت متأكد من أنك تريد حذف مصدر الدخل "{{name}}؟" لا يمكن التراجع عن هذا الإجراء.',
 
+    // Recurring View
+    manageRecurring: 'إدارة المعاملات المتكررة',
+    addRecurring: 'إضافة معاملة متكررة',
+    transactionType: 'نوع المعاملة',
+    startDate: 'تاريخ البدء',
+    add: 'إضافة',
+    noRecurringTransactions: 'لم يتم إعداد أي معاملات متكررة بعد.',
+    confirmDeleteRecurring: 'هل أنت متأكد من حذف هذه المعاملة المتكررة؟ لن تتم إضافتها تلقائيًا في المستقبل.',
+    nextOn: 'التالي في: {{date}}',
+    recurringExpenses: 'المصروفات المتكررة',
+    recurringIncomes: 'الدخل المتكرر',
+
     // Trend Views
     cumulativeSpendingTrend: 'الاتجاه التراكمي للإنفاق',
     cumulativeIncomeTrend: 'الاتجاه التراكمي للدخل',
@@ -1028,6 +1099,12 @@ const translations = {
     errorDeleteMonth: 'فشل في حذف الشهر.',
     successPaymentConfirmed: 'تم تأكيد الدفع بنجاح!',
     errorConfirmingPayment: 'خطأ في تأكيد الدفع.',
+    recurringTransactionsUpdated: 'تم تحديث المعاملات المتكررة.',
+    errorProcessingRecurring: 'فشل في معالجة المعاملات المتكررة.',
+    successRecurringAdded: 'تمت إضافة المعاملة المتكررة.',
+    errorRecurringAdd: 'فشل في إضافة المعاملة المتكررة.',
+    successRecurringDeleted: 'تم حذف المعاملة المتكررة.',
+    errorRecurringDelete: 'فشل في حذف المعاملة المتكررة.',
     
     // Categories
     category_food: 'طعام',
