@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { auth, isFirebaseConfigured } from './firebase';
-import type { User } from 'firebase/auth';
+// FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
+import { auth, isFirebaseConfigured, firebase } from './firebase';
 
 import { Auth } from './components/Auth';
 import { MainApp } from './components/MainApp';
@@ -19,7 +20,8 @@ export default function App() {
     return <FirebaseNotConfigured />;
   }
 
-  const [user, setUser] = useState<User | null>(null);
+  // FIX: Use `firebase.User` type from the compat library.
+  const [user, setUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
-import type { User } from 'firebase/auth';
+// FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
+import { firebase } from '../firebase';
 import type { MonthlyData, Expense, Currency, IncomeSource, IncomeTransaction, CategoryId } from '../types';
 import { Summary } from './Summary';
 import { AddExpenseForm } from './AddExpenseForm';
@@ -23,7 +25,8 @@ enum View {
 }
 
 interface MonthlyViewProps {
-    user: User;
+    // FIX: Use `firebase.User` type from the compat library.
+    user: firebase.User;
     monthData: MonthlyData;
     incomeSources: IncomeSource[];
     onAddExpense: (expenseData: {

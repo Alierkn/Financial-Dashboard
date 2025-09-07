@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
-import type { User } from 'firebase/auth';
+// FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
+import { firebase } from '../firebase';
 import { useExchangeRates } from '../hooks/useExchangeRates';
 import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId } from '../types';
 import { CURRENCIES } from '../constants';
@@ -8,14 +10,15 @@ import { MonthlySetup } from './MonthlySetup';
 import { MonthlyView } from './MonthlyView';
 import { AnnualView } from './AnnualView';
 import { LimitSetter } from './LimitSetter';
-import { auth, db, firebase } from '../firebase';
+import { auth, db } from '../firebase';
 import { useLanguage } from '../contexts/LanguageProvider';
 import { useToast } from '../contexts/ToastProvider';
 
 type View = 'dashboard' | 'setup' | 'monthly' | 'annual';
 
 interface MainAppProps {
-  user: User;
+  // FIX: Use `firebase.User` type from the compat library.
+  user: firebase.User;
 }
 
 const LoadingSpinner: React.FC = () => (
@@ -97,7 +100,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       unsubscribeIncomeSources();
       unsubscribePreferences();
     };
-  }, [monthlyDataRef, incomeSourcesRef, preferencesRef]);
+  }, [monthlyDataRef, incomeSourcesRef, preferencesRef, t, loading]);
 
   const activeMonthData = useMemo(() => allMonthlyData.find(d => d.id === activeMonthId) || null, [allMonthlyData, activeMonthId]);
   const allAvailableYears = useMemo(() => Array.from(new Set(allMonthlyData.map(d => d.year))).sort((a, b) => b - a), [allMonthlyData]);
@@ -105,345 +108,365 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const { rates, isLoading: ratesLoading, error: ratesError } = useExchangeRates(baseCurrencyForRates);
 
   useEffect(() => {
+    // When switching to a new month view, default the display currency to that month's base currency.
     if (activeMonthData) {
-      preferencesRef.get().then(doc => {
-          if (!doc.exists || !doc.data()?.displayCurrency) setDisplayCurrency(activeMonthData.currency);
-      })
+      setDisplayCurrency(activeMonthData.currency);
     }
-  }, [activeMonthId, activeMonthData, preferencesRef]);
+  }, [activeMonthData]);
 
-  const conversionRate = useMemo(() => rates?.[displayCurrency.code] || 1, [rates, displayCurrency]);
+  const conversionRate = useMemo(() => {
+    if (!rates || !activeMonthData) return 1;
+    // We need to convert from the month's base currency to the selected display currency.
+    // The useExchangeRates hook returns rates relative to baseCurrencyForRates.
+    const baseRate = rates[activeMonthData.currency.code] || 1; 
+    const displayRate = rates[displayCurrency.code] || 1;
+    
+    if (baseRate === 0) return 1; // Avoid division by zero
+    
+    return displayRate / baseRate;
+  }, [rates, displayCurrency, activeMonthData]);
 
-  const handleSignOut = async () => { try { await auth!.signOut(); } catch (error) { console.error("Error signing out: ", error); } };
-  const handleDisplayCurrencyChange = (currency: Currency) => { setDisplayCurrency(currency); preferencesRef.set({ displayCurrency: currency }, { merge: true }); };
-  const handleStartNewMonth = () => { setSubmitError(null); setCurrentView('setup'); };
-  const handleViewMonth = (monthId: string) => { setActiveMonthId(monthId); setCurrentView('monthly'); };
-  const handleViewAnnual = (year: number) => { setActiveYear(year); setCurrentView('annual'); };
-  const handleBackToDashboard = () => { setActiveMonthId(null); setActiveYear(null); setCurrentView('dashboard'); };
 
-  const handleSetupMonth = async (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency): Promise<boolean> => {
+  // Handler for saving display currency preference
+  const handleDisplayCurrencyChange = (currency: Currency) => {
+    setDisplayCurrency(currency);
+    preferencesRef.set({ displayCurrency: currency }, { merge: true }).catch(console.error);
+  };
+  
+  // Firestore operation wrapper
+  const handleFirestoreOp = async <T,>(op: () => Promise<T>, successMsg: string, errorMsg: string): Promise<T | null> => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-        const monthId = `${year}-${String(month).padStart(2, '0')}`;
-        const newMonthDataObject: MonthlyData = { 
-            id: monthId,
-            year, 
-            month, 
-            limit, 
-            baseIncome: income, 
-            incomeGoal, 
-            currency, 
-            expenses: [], 
-            incomeTransactions: [] 
-        };
-
-        await monthlyDataRef.doc(monthId).set(newMonthDataObject);
-
-        setAllMonthlyData(prevData => [newMonthDataObject, ...prevData].sort((a, b) => b.id.localeCompare(a.id)));
-        
-        setActiveMonthId(monthId);
-        setCurrentView('monthly');
-        
-        addToast(t('successMonthCreated'), 'success');
-        return true;
+      const result = await op();
+      addToast(successMsg, 'success');
+      return result;
     } catch (error: any) {
-        const message = error.message || t('errorCreateBudget');
-        setSubmitError(message);
-        addToast(message, 'error');
-        return false;
+      console.error(errorMsg, error);
+      const message = error.message || errorMsg;
+      setSubmitError(message);
+      addToast(message, 'error');
+      return null;
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleSetupFirstMonth = async (limit: number, income: number, currency: Currency) => {
-      const now = new Date();
-      const success = await handleSetupMonth(now.getFullYear(), now.getMonth() + 1, limit, income, 0, currency);
-      if (success) setIsInitialSetup(false);
+  const handleSignOut = () => {
+    auth!.signOut();
+  };
+
+  const handleInitialSetup = async (limit: number, income: number, currency: Currency) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    await handleMonthlySetup(year, month, limit, income, 0, currency);
+    setIsInitialSetup(false);
   };
   
+  const handleMonthlySetup = async (year: number, month: number, limit: number, income: number, incomeGoal: number, currency: Currency) => {
+    const monthId = `${year}-${String(month).padStart(2, '0')}`;
+    const newMonthData: Omit<MonthlyData, 'id'> = {
+      year,
+      month,
+      limit,
+      baseIncome: income,
+      incomeGoal: incomeGoal > 0 ? incomeGoal : undefined,
+      currency,
+      expenses: [],
+      incomeTransactions: [],
+      categoryBudgets: {}
+    };
+    
+    const result = await handleFirestoreOp(
+      () => monthlyDataRef.doc(monthId).set(newMonthData),
+      t('successMonthCreated'),
+      t('errorCreateBudget')
+    );
+    
+    if(result !== null) {
+      setActiveMonthId(monthId);
+      setCurrentView('monthly');
+    }
+  };
+
   const handleDeleteMonth = async (monthId: string) => {
     if (window.confirm(t('confirmDeleteMonth'))) {
-        setDeletingMonthId(monthId);
-        try { 
-            await monthlyDataRef.doc(monthId).delete(); 
-            addToast(t('successMonthDeleted'), 'success');
-        }
-        catch (error: any) { 
-            addToast(error.message || t('errorDeleteMonth'), 'error');
-            console.error("Error deleting month:", error); 
-        }
-        finally { setDeletingMonthId(null); }
+      setDeletingMonthId(monthId);
+      await handleFirestoreOp(
+        () => monthlyDataRef.doc(monthId).delete(),
+        t('successMonthDeleted'),
+        t('errorDeleteMonth')
+      );
+      setDeletingMonthId(null);
     }
   };
 
-  const handleAddExpense = async (expenseData: { amount: number; description: string; category: CategoryId; paymentMethod: 'cash' | 'credit-card'; isInstallment: boolean; installments: number; }): Promise<boolean> => {
-    if (!activeMonthId) {
-        addToast(t('errorActiveMonth'), 'error');
-        return false;
-    }
-    setIsSubmitting(true);
-    try {
-      const now = new Date();
-      if (!expenseData.isInstallment) {
-        const newExpense: Expense = {
-            id: `${now.getTime()}-${Math.random().toString(36).substring(2, 9)}`,
-            amount: expenseData.amount,
-            description: expenseData.description,
-            category: expenseData.category,
-            paymentMethod: expenseData.paymentMethod,
-            date: now.toISOString(),
-            status: 'paid',
-        };
-        await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) });
-      } else {
-        const installmentId = `${now.getTime()}-${Math.random().toString(36).substring(2, 9)}`;
-        const amountPerInstallment = expenseData.amount / expenseData.installments;
+  const handleAddExpense = async (expenseData: { amount: number; description: string; category: CategoryId; paymentMethod: 'cash' | 'credit-card'; isInstallment: boolean; installments: number; }) => {
+    if (!activeMonthId) { addToast(t('errorActiveMonth'), 'error'); return false; }
+
+    const { amount, installments, isInstallment, ...rest } = expenseData;
+    const installmentId = isInstallment ? `inst-${Date.now()}` : undefined;
+
+    const success = await handleFirestoreOp(async () => {
+        const batch = db!.batch();
+        const expenseAmount = isInstallment ? amount / installments : amount;
         
-        const newExpenses: Expense[] = Array.from({ length: expenseData.installments }, (_, i) => {
-            const installmentDate = new Date(now);
-            installmentDate.setMonth(now.getMonth() + i);
+        for (let i = 0; i < (isInstallment ? installments : 1); i++) {
+            const expenseDate = new Date();
+            expenseDate.setMonth(expenseDate.getMonth() + i);
+            const targetYear = expenseDate.getFullYear();
+            const targetMonth = expenseDate.getMonth() + 1;
+            const targetMonthId = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
 
-            return {
-                id: `${now.getTime()}-${i}-${Math.random().toString(36).substring(2, 9)}`,
-                amount: amountPerInstallment,
-                description: expenseData.description,
-                category: expenseData.category,
-                paymentMethod: expenseData.paymentMethod,
-                date: installmentDate.toISOString(),
+            const docRef = monthlyDataRef.doc(targetMonthId);
+            const docSnap = await docRef.get();
+
+            const newExpense: Expense = {
+                id: `exp-${Date.now()}-${i}`,
+                amount: expenseAmount,
+                date: expenseDate.toISOString(),
                 status: i === 0 ? 'paid' : 'pending',
-                installmentDetails: {
-                    installmentId,
-                    current: i + 1,
-                    total: expenseData.installments,
-                }
+                installmentDetails: isInstallment ? { installmentId: installmentId!, current: i + 1, total: installments } : undefined,
+                ...rest
             };
-        });
-        await monthlyDataRef.doc(activeMonthId).update({ expenses: firebase.firestore.FieldValue.arrayUnion(...newExpenses) });
-      }
-      addToast(t('successExpenseAdded'), 'success');
-      return true;
-    } catch (error: any) { 
-        addToast(error.message || t('errorAddExpense'), 'error');
-        console.error("Error adding expense:", error); return false; 
-    }
-    finally { setIsSubmitting(false); }
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    if (!activeMonthId) return;
-    setDeletingExpenseId(id);
-    const docRef = monthlyDataRef.doc(activeMonthId);
-    try {
-      await db!.runTransaction(async (transaction) => {
-        const doc = await transaction.get(docRef);
-        if (!doc.exists) { throw new Error("Document does not exist!"); }
-        const data = doc.data() as MonthlyData;
-        const newExpenses = data.expenses.filter(e => e.id !== id);
-        transaction.update(docRef, { expenses: newExpenses });
-      });
-      addToast(t('successExpenseDeleted'), 'success');
-    } catch (error: any) { 
-        addToast(error.message || t('errorDeleteExpense'), 'error');
-        console.error("Error deleting expense:", error); 
-    }
-    finally { setDeletingExpenseId(null); }
+            
+            if (docSnap.exists) {
+                batch.update(docRef, { expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) });
+            }
+        }
+        await batch.commit();
+    }, t('successExpenseAdded'), t('errorAddExpense'));
+    return success !== null;
   };
   
-  const handleConfirmInstallmentPayment = async (id: string) => {
-    if (!activeMonthId) return;
-    setConfirmingPaymentId(id);
-    const docRef = monthlyDataRef.doc(activeMonthId);
-    try {
-        await db!.runTransaction(async (transaction) => {
-            const doc = await transaction.get(docRef);
-            if (!doc.exists) { throw new Error("Document does not exist!"); }
-            const data = doc.data() as MonthlyData;
-            const newExpenses = data.expenses.map(e => 
-                e.id === id ? { ...e, status: 'paid' as 'paid', date: new Date().toISOString() } : e
-            );
-            transaction.update(docRef, { expenses: newExpenses });
-        });
-        addToast(t('successPaymentConfirmed'), 'success');
-    } catch (error: any) { 
-        addToast(error.message || t('errorConfirmingPayment'), 'error');
-        console.error("Error confirming payment:", error); 
-    }
-    finally { setConfirmingPaymentId(null); }
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!activeMonthId || !activeMonthData) return;
+    setDeletingExpenseId(expenseId);
+    
+    const expenseToDelete = activeMonthData.expenses.find(e => e.id === expenseId);
+    
+    await handleFirestoreOp(async () => {
+        if (expenseToDelete?.installmentDetails?.installmentId) {
+            const batch = db!.batch();
+            const allDocs = await monthlyDataRef.get();
+            
+            allDocs.forEach(doc => {
+                const data = doc.data() as MonthlyData;
+                const updatedExpenses = data.expenses.filter(exp => exp.installmentDetails?.installmentId !== expenseToDelete.installmentDetails!.installmentId);
+                if (updatedExpenses.length < data.expenses.length) {
+                    batch.update(doc.ref, { expenses: updatedExpenses });
+                }
+            });
+            await batch.commit();
+        } else {
+            const updatedExpenses = activeMonthData.expenses.filter(e => e.id !== expenseId);
+            await monthlyDataRef.doc(activeMonthId).update({ expenses: updatedExpenses });
+        }
+    }, t('successExpenseDeleted'), t('errorDeleteExpense'));
+    
+    setDeletingExpenseId(null);
+  };
+  
+  const handleConfirmPayment = async (expenseId: string) => {
+      if (!activeMonthId || !activeMonthData) return;
+      setConfirmingPaymentId(expenseId);
+
+      const updatedExpenses = activeMonthData.expenses.map(e => 
+          e.id === expenseId ? { ...e, status: 'paid' as 'paid' } : e
+      );
+
+      await handleFirestoreOp(
+          () => monthlyDataRef.doc(activeMonthId).update({ expenses: updatedExpenses }),
+          t('successPaymentConfirmed'),
+          t('errorConfirmingPayment')
+      );
+      setConfirmingPaymentId(null);
   };
 
-  const handleAddIncomeSource = async (source: Omit<IncomeSource, 'id'>): Promise<boolean> => {
-    setIsSubmitting(true);
-    try { 
-        await incomeSourcesRef.add(source); 
-        addToast(t('successSourceAdded'), 'success');
-        return true; 
-    }
-    catch(error: any) { 
-        addToast(error.message || t('errorAddSource'), 'error');
-        console.error(error); 
-        return false; 
-    }
-    finally { setIsSubmitting(false); }
+  const handleAddIncomeSource = async (source: Omit<IncomeSource, 'id'>) => {
+    const result = await handleFirestoreOp(
+        () => incomeSourcesRef.add(source),
+        t('successSourceAdded'),
+        t('errorAddSource')
+    );
+    return result !== null;
+  };
+
+  const handleUpdateIncomeSource = async (source: IncomeSource) => {
+    const { id, ...data } = source;
+    const result = await handleFirestoreOp(
+        () => incomeSourcesRef.doc(id).update(data),
+        t('successSourceUpdated'),
+        t('errorUpdateSource')
+    );
+    return result !== null;
   };
 
   const handleDeleteIncomeSource = async (id: string) => {
     setDeletingSourceId(id);
-    try { 
-        await incomeSourcesRef.doc(id).delete(); 
-        addToast(t('successSourceDeleted'), 'success');
-    }
-    catch(error: any) { 
-        addToast(error.message || t('errorDeleteSource'), 'error');
-        console.error(error); 
-    }
-    finally { setDeletingSourceId(null); }
-  };
-  
-  const handleUpdateIncomeSource = async (updatedSource: IncomeSource): Promise<boolean> => {
-    setIsSubmitting(true);
-    const { id, ...data } = updatedSource;
-    try { 
-        await incomeSourcesRef.doc(id).update(data); 
-        addToast(t('successSourceUpdated'), 'success');
-        return true; 
-    }
-    catch(error: any) { 
-        addToast(error.message || t('errorUpdateSource'), 'error');
-        console.error(error); 
-        return false; 
-    }
-    finally { setIsSubmitting(false); }
+    await handleFirestoreOp(
+        () => incomeSourcesRef.doc(id).delete(),
+        t('successSourceDeleted'),
+        t('errorDeleteSource')
+    );
+    setDeletingSourceId(null);
   };
 
-  const handleAddIncomeTransaction = async (source: IncomeSource, date: string): Promise<boolean> => {
-    if(!activeMonthId) return false;
-    setIsSubmitting(true);
-    try {
-        const newTransaction: IncomeTransaction = { id: `${Date.now()}`, name: source.name, amount: source.amount, date: new Date(`${date}T00:00:00`).toISOString(), category: source.category, status: 'pending' };
-        await monthlyDataRef.doc(activeMonthId).update({ incomeTransactions: firebase.firestore.FieldValue.arrayUnion(newTransaction) });
-        addToast(t('successTransactionAdded'), 'success');
-        return true;
-    } catch(error: any) { 
-        addToast(error.message || t('errorAddTransaction'), 'error');
-        console.error(error); 
-        return false; 
-    }
-    finally { setIsSubmitting(false); }
+  const handleAddIncomeTransaction = async (source: IncomeSource, date: string) => {
+    if (!activeMonthId) return false;
+    const newTransaction: IncomeTransaction = {
+      id: `inc-${Date.now()}`,
+      name: source.name,
+      amount: source.amount,
+      date: new Date(date).toISOString(),
+      category: source.category,
+      status: 'pending'
+    };
+    const result = await handleFirestoreOp(
+        () => monthlyDataRef.doc(activeMonthId).update({
+            incomeTransactions: firebase.firestore.FieldValue.arrayUnion(newTransaction)
+        }),
+        t('successTransactionAdded'),
+        t('errorAddTransaction')
+    );
+    return result !== null;
   };
-  
+
   const handleDeleteIncomeTransaction = async (id: string) => {
-    if (!activeMonthId) return;
+    if (!activeMonthId || !activeMonthData) return;
     setDeletingTransactionId(id);
-    const docRef = monthlyDataRef.doc(activeMonthId);
-    try {
-        await db!.runTransaction(async (transaction) => {
-            const doc = await transaction.get(docRef);
-            if (!doc.exists) { throw new Error("Document does not exist!"); }
-            const data = doc.data() as MonthlyData;
-            const newTransactions = data.incomeTransactions.filter(t => t.id !== id);
-            transaction.update(docRef, { incomeTransactions: newTransactions });
-        });
-        addToast(t('successTransactionDeleted'), 'success');
-    } catch (error: any) { 
-        addToast(error.message || t('errorDeleteTransaction'), 'error');
-        console.error(error); 
-    }
-    finally { setDeletingTransactionId(null); }
+    const updatedTransactions = activeMonthData.incomeTransactions.filter(t => t.id !== id);
+    await handleFirestoreOp(
+        () => monthlyDataRef.doc(activeMonthId).update({ incomeTransactions: updatedTransactions }),
+        t('successTransactionDeleted'),
+        t('errorDeleteTransaction')
+    );
+    setDeletingTransactionId(null);
   };
-
+  
   const handleUpdateIncomeTransactionStatus = async (id: string, status: 'completed') => {
-    if (!activeMonthId) return;
-    const docRef = monthlyDataRef.doc(activeMonthId);
-    try {
-        await db!.runTransaction(async (transaction) => {
-            const doc = await transaction.get(docRef);
-            if (!doc.exists) { throw new Error("Document does not exist!"); }
-            const data = doc.data() as MonthlyData;
-            const newTransactions = data.incomeTransactions.map(t => t.id === id ? { ...t, status } : t);
-            transaction.update(docRef, { incomeTransactions: newTransactions });
-        });
-        addToast(t('successTransactionUpdated'), 'success');
-    } catch(error: any) { 
-        addToast(error.message || t('errorUpdateTransaction'), 'error');
-        console.error(error); 
-    }
+    if (!activeMonthId || !activeMonthData) return;
+    const updatedTransactions = activeMonthData.incomeTransactions.map(t =>
+        t.id === id ? { ...t, status } : t
+    );
+    await handleFirestoreOp(
+        () => monthlyDataRef.doc(activeMonthId).update({ incomeTransactions: updatedTransactions }),
+        t('successTransactionUpdated'),
+        t('errorUpdateTransaction')
+    );
   };
 
-  const handleUpdateCategoryBudgets = async (budgets: { [key: string]: number }): Promise<boolean> => {
-    if (!activeMonthId) {
-        addToast(t('errorActiveMonth'), 'error');
-        return false;
-    }
-    setIsSubmitting(true);
-    try { 
-        await monthlyDataRef.doc(activeMonthId).update({ categoryBudgets: budgets });
-        addToast(t('successBudgetsSaved'), 'success');
-        return true; 
-    }
-    catch(error: any) { 
-        addToast(error.message || t('errorSaveBudgets'), 'error');
-        console.error(error); 
-        return false; 
-    }
-    finally { setIsSubmitting(false); }
+  const handleUpdateCategoryBudgets = async (budgets: { [key: string]: number }) => {
+    if (!activeMonthId) return false;
+    const result = await handleFirestoreOp(
+        () => monthlyDataRef.doc(activeMonthId).update({ categoryBudgets: budgets }),
+        t('successBudgetsSaved'),
+        t('errorSaveBudgets')
+    );
+    return result !== null;
+  };
+  
+  const handleUpdateCategoryColors = async (colors: { [key: string]: string }) => {
+      const result = await handleFirestoreOp(
+        () => preferencesRef.set({ categoryColors: colors }, { merge: true }),
+        t('successColorsSaved'),
+        t('errorSaveColors')
+      );
+      return result !== null;
+  };
+  
+  const handleUpdateIncomeGoal = async (goal: number) => {
+    if (!activeMonthId) return false;
+    const result = await handleFirestoreOp(
+        () => monthlyDataRef.doc(activeMonthId).update({ incomeGoal: goal }),
+        t('successGoalSet'),
+        t('errorSetGoal')
+    );
+    return result !== null;
   };
 
-  const handleUpdateCategoryColors = async (colors: { [key: string]: string }): Promise<boolean> => {
-    setIsSubmitting(true);
-    try { 
-        await preferencesRef.set({ categoryColors: colors }, { merge: true }); 
-        addToast(t('successColorsSaved'), 'success');
-        return true; 
-    }
-    catch(error: any) { 
-        addToast(error.message || t('errorSaveColors'), 'error');
-        console.error(error); 
-        return false; 
-    }
-    finally { setIsSubmitting(false); }
-  };
-
-  const handleUpdateIncomeGoal = async (goal: number): Promise<boolean> => {
-    if (!activeMonthId) {
-        addToast(t('errorActiveMonth'), 'error');
-        return false;
-    }
-    setIsSubmitting(true);
-    try { 
-        await monthlyDataRef.doc(activeMonthId).update({ incomeGoal: goal });
-        addToast(t('successGoalSet'), 'success');
-        return true; 
-    }
-    catch(error: any) { 
-        addToast(error.message || t('errorSetGoal'), 'error');
-        console.error(error); 
-        return false; 
-    }
-    finally { setIsSubmitting(false); }
-  };
+  // View Navigation
+  const handleViewMonth = (monthId: string) => { setActiveMonthId(monthId); setCurrentView('monthly'); };
+  const handleViewAnnual = (year: number) => { setActiveYear(year); setCurrentView('annual'); };
+  const handleBackToDashboard = () => { setActiveMonthId(null); setActiveYear(null); setCurrentView('dashboard'); };
+  
+  // Render logic
+  if (loading) return <LoadingSpinner />;
+  if (firestoreError) return <ErrorDisplay message={firestoreError} />;
+  if (isInitialSetup) return <LimitSetter onSetup={handleInitialSetup} isSubmitting={isSubmitting} submissionError={submitError} />;
 
   const renderContent = () => {
-    if (firestoreError) return <ErrorDisplay message={firestoreError} />;
-    if (loading) return <LoadingSpinner />;
-    if (isInitialSetup) return <LimitSetter onSetup={handleSetupFirstMonth} isSubmitting={isSubmitting} submissionError={submitError} />;
-
     switch(currentView) {
-      case 'setup': return <MonthlySetup onSetup={handleSetupMonth} onCancel={handleBackToDashboard} existingMonths={allMonthlyData.map(d => d.id)} isSubmitting={isSubmitting} submissionError={submitError} />;
+      case 'dashboard':
+        return <Dashboard 
+                  user={user}
+                  monthlyData={allMonthlyData}
+                  onStartNewMonth={() => setCurrentView('setup')}
+                  onViewMonth={handleViewMonth}
+                  onViewAnnual={handleViewAnnual}
+                  onDeleteMonth={handleDeleteMonth}
+                  onSignOut={handleSignOut}
+                  deletingMonthId={deletingMonthId}
+               />;
+      case 'setup':
+        return <MonthlySetup 
+                  onSetup={handleMonthlySetup}
+                  onCancel={handleBackToDashboard}
+                  existingMonths={allMonthlyData.map(d => d.id)}
+                  isSubmitting={isSubmitting}
+                  submissionError={submitError}
+                />;
       case 'monthly':
-        if (activeMonthData) {
-            return <MonthlyView {...{user, monthData: activeMonthData, incomeSources, onAddExpense: handleAddExpense, onDeleteExpense: handleDeleteExpense, onConfirmPayment: handleConfirmInstallmentPayment, onAddIncomeSource: handleAddIncomeSource, onDeleteIncomeSource: handleDeleteIncomeSource, onUpdateIncomeSource: handleUpdateIncomeSource, onAddIncomeTransaction: handleAddIncomeTransaction, onDeleteIncomeTransaction: handleDeleteIncomeTransaction, onUpdateIncomeTransactionStatus: handleUpdateIncomeTransactionStatus, onUpdateCategoryBudgets: handleUpdateCategoryBudgets, onUpdateCategoryColors: handleUpdateCategoryColors, categoryColors, onUpdateIncomeGoal: handleUpdateIncomeGoal, onBackToDashboard: handleBackToDashboard, onSignOut: handleSignOut, displayCurrency, onDisplayCurrencyChange: handleDisplayCurrencyChange, conversionRate, ratesLoading, ratesError, isSubmitting, submitError, deletingExpenseId, confirmingPaymentId, deletingSourceId, deletingTransactionId}} />;
-        }
-        handleBackToDashboard(); return null;
+        if (!activeMonthData) return <ErrorDisplay message="Selected month data not found." />;
+        return <MonthlyView 
+                  user={user}
+                  monthData={activeMonthData}
+                  incomeSources={incomeSources}
+                  onAddExpense={handleAddExpense}
+                  onDeleteExpense={handleDeleteExpense}
+                  onConfirmPayment={handleConfirmPayment}
+                  onAddIncomeSource={handleAddIncomeSource}
+                  onDeleteIncomeSource={handleDeleteIncomeSource}
+                  onUpdateIncomeSource={handleUpdateIncomeSource}
+                  onAddIncomeTransaction={handleAddIncomeTransaction}
+                  onDeleteIncomeTransaction={handleDeleteIncomeTransaction}
+                  onUpdateIncomeTransactionStatus={handleUpdateIncomeTransactionStatus}
+                  onUpdateCategoryBudgets={handleUpdateCategoryBudgets}
+                  onUpdateCategoryColors={handleUpdateCategoryColors}
+                  categoryColors={categoryColors}
+                  onUpdateIncomeGoal={handleUpdateIncomeGoal}
+                  onBackToDashboard={handleBackToDashboard}
+                  onSignOut={handleSignOut}
+                  displayCurrency={displayCurrency}
+                  onDisplayCurrencyChange={handleDisplayCurrencyChange}
+                  conversionRate={conversionRate}
+                  ratesLoading={ratesLoading}
+                  ratesError={ratesError}
+                  isSubmitting={isSubmitting}
+                  submitError={submitError}
+                  deletingExpenseId={deletingExpenseId}
+                  confirmingPaymentId={confirmingPaymentId}
+                  deletingSourceId={deletingSourceId}
+                  deletingTransactionId={deletingTransactionId}
+                />;
       case 'annual':
-        if (activeYear) {
-            return <AnnualView {...{user, year: activeYear, annualData: allMonthlyData.filter(d => d.year === activeYear), onBackToDashboard: handleBackToDashboard, onSignOut: handleSignOut, displayCurrency, conversionRate, allAvailableYears, onYearChange: setActiveYear}} />
-        }
-        handleBackToDashboard(); return null;
-      default: return <Dashboard {...{user, monthlyData: allMonthlyData, onStartNewMonth: handleStartNewMonth, onViewMonth: handleViewMonth, onViewAnnual: handleViewAnnual, onDeleteMonth: handleDeleteMonth, onSignOut: handleSignOut, deletingMonthId}} />;
+        if (!activeYear) return <ErrorDisplay message="Selected year not found." />;
+        return <AnnualView
+                  user={user}
+                  year={activeYear}
+                  annualData={allMonthlyData.filter(d => d.year === activeYear)}
+                  onBackToDashboard={handleBackToDashboard}
+                  onSignOut={handleSignOut}
+                  displayCurrency={displayCurrency}
+                  conversionRate={conversionRate}
+                  allAvailableYears={allAvailableYears}
+                  onYearChange={setActiveYear}
+               />;
+      default:
+        return <Dashboard user={user} monthlyData={allMonthlyData} onStartNewMonth={() => setCurrentView('setup')} onViewMonth={handleViewMonth} onViewAnnual={handleViewAnnual} onDeleteMonth={handleDeleteMonth} onSignOut={handleSignOut} deletingMonthId={deletingMonthId} />;
     }
   };
 
   return <>{renderContent()}</>;
-}
+};

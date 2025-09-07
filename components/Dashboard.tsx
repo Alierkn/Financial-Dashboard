@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
-import type { User } from 'firebase/auth';
+// FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
+import { firebase } from '../firebase';
 import type { MonthlyData } from '../types';
 import { SpendingComparison } from './SpendingComparison';
 import { ThemeToggle } from './ThemeToggle';
@@ -7,7 +9,8 @@ import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '../contexts/LanguageProvider';
 
 interface DashboardProps {
-  user: User;
+  // FIX: Use `firebase.User` type from the compat library.
+  user: firebase.User;
   monthlyData: MonthlyData[];
   onStartNewMonth: () => void;
   onViewMonth: (monthId: string) => void;

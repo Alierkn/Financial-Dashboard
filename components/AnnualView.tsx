@@ -1,6 +1,8 @@
+
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
-import type { User } from 'firebase/auth';
+// FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
+import { firebase } from '../firebase';
 import type { MonthlyData, Currency } from '../types';
 import { CATEGORIES, INCOME_CATEGORIES } from '../constants';
 import { ThemeToggle } from './ThemeToggle';
@@ -8,7 +10,8 @@ import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '../contexts/LanguageProvider';
 
 interface AnnualViewProps {
-  user: User;
+  // FIX: Use `firebase.User` type from the compat library.
+  user: firebase.User;
   year: number;
   annualData: MonthlyData[];
   onBackToDashboard: () => void;

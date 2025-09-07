@@ -16,13 +16,13 @@ import 'firebase/compat/firestore';
 // 5. `firebaseConfig` nesnesini bulun ve değerlerini buraya kopyalayın.
 // =================================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSy...YOUR_API_KEY",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "1:your-sender-id:web:your-app-id",
-  measurementId: "G-YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyCSU0uhNCAiQvyvLM5uZxvOJi7TN34H5hQ",
+  authDomain: "financialdashboard-4b23e.firebaseapp.com",
+  projectId: "financialdashboard-4b23e",
+  storageBucket: "financialdashboard-4b23e.firebasestorage.app",
+  messagingSenderId: "734257592555",
+  appId: "1:734257592555:web:c7bff06aef0de1361f26ae",
+  measurementId: "G-LMELYRSPNE"
 };
 
 
