@@ -38,6 +38,7 @@ export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentM
     const processExpenses = (expenses: MonthlyData['expenses']) => {
         const dailyTotals = new Map<number, number>();
         for (const expense of expenses) {
+            if (expense.status !== 'paid') continue; // Only count paid expenses
             const day = new Date(expense.date).getDate();
             dailyTotals.set(day, (dailyTotals.get(day) || 0) + expense.amount);
         }
@@ -63,8 +64,12 @@ export const SpendingComparison: React.FC<SpendingComparisonProps> = ({ currentM
   const currentMonthName = months[currentMonthData.month - 1];
   const previousMonthName = months[previousMonthData.month - 1];
   
-  const totalCurrentSpending = currentMonthData.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const totalPreviousSpending = previousMonthData.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalCurrentSpending = currentMonthData.expenses
+    .filter(e => e.status === 'paid')
+    .reduce((sum, exp) => sum + exp.amount, 0);
+  const totalPreviousSpending = previousMonthData.expenses
+    .filter(e => e.status === 'paid')
+    .reduce((sum, exp) => sum + exp.amount, 0);
   const difference = totalCurrentSpending - totalPreviousSpending;
   const percentageChange = totalPreviousSpending > 0 ? (difference / totalPreviousSpending) * 100 : (totalCurrentSpending > 0 ? 100 : 0);
 

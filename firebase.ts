@@ -30,34 +30,32 @@ const firebaseConfig = {
 // Bu değerler değiştirilene kadar uygulama bir kurulum ekranı gösterecektir.
 export const isFirebaseConfigured = !!firebaseConfig.projectId && firebaseConfig.projectId !== 'your-project-id';
 
-// Değişkenin koşullu blok içinde başlatılmasına izin vermek için `let` kullanın.
-let auth: firebase.auth.Auth | null = null;
-let googleProvider: firebase.auth.GoogleAuthProvider | null = null;
-let db: firebase.firestore.Firestore | null = null;
-
-// Firebase'i yalnızca yapılandırılmışsa ve henüz başlatılmamışsa başlatın
-if (isFirebaseConfigured && !firebase.apps.length) {
+// Firebase'i yalnızca henüz başlatılmamışsa başlatın.
+// DÜZELTME: Başlatma işlemi artık `isFirebaseConfigured` kontrolünün DIŞINDA
+// gerçekleşiyor. Bu, uygulamanın çökmesini önler ve bunun yerine
+// yapılandırma yanlışsa Firebase SDK'sının kendi hatalarını vermesini sağlar.
+if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
-
-  // Hizmetleri başlatın
-  auth = firebase.auth();
-  googleProvider = new firebase.auth.GoogleAuthProvider();
-  db = firebase.firestore();
-
-  // --- DÜZELTME: Oturum kalıcılığını açıkça ayarlayın ---
-  // Bu, oturumlar arasında verilerin kaydedilmemesi sorununun temel çözümüdür.
-  // Varsayılan olarak, Firebase oturumu sürdürmelidir, ancak bazen bu belirli
-  // ortamlarda başarısız olabilir. Kalıcılığı açıkça `LOCAL` olarak ayarlamak,
-  // kullanıcının tarayıcı penceresini veya sekmesini kapattıktan sonra oturumunun
-  // açık kalmasını sağlar. Geri döndüklerinde, uygulama onları tanıyacak ve
-  // kayıtlı verilerini yükleyerek "sıfırdan başlama" sorununu önleyecektir.
-  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    .catch((error) => {
-      // Bu hata kısıtlayıcı ortamlarda (ör. özel tarama,
-      // devre dışı bırakılmış üçüncü taraf çerezleri) meydana gelebilir. Bunu günlüğe kaydetmek, kalıcılık başarısız olursa hata ayıklamaya yardımcı olur.
-      console.error("Firebase Auth: Could not set session persistence.", error);
-    });
 }
 
-// Başlatılan hizmetleri dışa aktarın. Uygulamanın mantığı null durumu yönetir.
+// Hizmetleri başlatın. Artık null olmayacaklar.
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+const db = firebase.firestore();
+
+// --- DÜZELTME: Oturum kalıcılığını açıkça ayarlayın ---
+// Bu, oturumlar arasında verilerin kaydedilmemesi sorununun temel çözümüdür.
+// Varsayılan olarak, Firebase oturumu sürdürmelidir, ancak bazen bu belirli
+// ortamlarda başarısız olabilir. Kalıcılığı açıkça `LOCAL` olarak ayarlamak,
+// kullanıcının tarayıcı penceresini veya sekmesini kapattıktan sonra oturumunun
+// açık kalmasını sağlar. Geri döndüklerinde, uygulama onları tanıyacak ve
+// kayıtlı verilerini yükleyerek "sıfırdan başlama" sorununu önleyecektir.
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .catch((error) => {
+    // Bu hata kısıtlayıcı ortamlarda (ör. özel tarama,
+    // devre dışı bırakılmış üçüncü taraf çerezleri) meydana gelebilir. Bunu günlüğe kaydetmek, kalıcılık başarısız olursa hata ayıklamaya yardımcı olur.
+    console.error("Firebase Auth: Could not set session persistence.", error);
+  });
+
+// Başlatılan hizmetleri dışa aktarın.
 export { auth, googleProvider, db, firebase };

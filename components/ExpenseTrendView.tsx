@@ -35,6 +35,7 @@ export const ExpenseTrendView: React.FC<ExpenseTrendViewProps> = ({ expenses, cu
     const dailyTotals = new Map<number, number>();
 
     for (const expense of expenses) {
+      if (expense.status !== 'paid') continue; // Only count paid expenses for trend
       const day = new Date(expense.date).getDate();
       const currentTotal = dailyTotals.get(day) || 0;
       dailyTotals.set(day, currentTotal + expense.amount);

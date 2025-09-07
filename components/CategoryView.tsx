@@ -49,6 +49,10 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
   const categoryData = useMemo(() => {
     const spendingByCategory: { [key: string]: number } = {};
     for (const expense of expenses) {
+      // DÜZELTME: Bekleyen taksitlerin kategori görünümünü etkilemesini önlemek için
+      // yalnızca ödenmiş harcamaları dahil et. Bu, özet verileriyle tutarlılığı sağlar.
+      if (expense.status !== 'paid') continue;
+      
       if (!spendingByCategory[expense.category]) {
         spendingByCategory[expense.category] = 0;
       }
@@ -87,11 +91,12 @@ export const CategoryView: React.FC<CategoryViewProps> = ({ expenses, currency, 
   };
 
   const visibleCategoryData = categoryData.filter(item => !hiddenCategories.has(item.name));
+  const paidExpensesExist = expenses.some(e => e.status === 'paid');
 
   return (
     <div className="h-full">
       <h2 className="text-xl font-bold text-white mb-4">{t('spendingByCategory')}</h2>
-       {expenses.length > 0 ? (
+       {paidExpensesExist && visibleCategoryData.length > 0 ? (
         <>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-center">
               <div className="w-full h-64">
