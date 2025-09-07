@@ -5,6 +5,9 @@ type Language = 'en' | 'tr' | 'it' | 'ar';
 
 const translations = {
   en: {
+    // General
+    language_code: 'en-US',
+
     // Auth
     welcomeBack: 'Welcome Back!',
     createAccount: 'Create Account',
@@ -80,6 +83,7 @@ const translations = {
     income: 'Income',
     incomeTrend: 'Income Trend',
     recurring: 'Recurring',
+    aiAdvisor: 'AI Advisor',
 
     // Summary
     totalSpent: 'Total Spent',
@@ -107,6 +111,9 @@ const translations = {
     saving: 'Saving...',
     saveBudgets: 'Save Budgets',
     noCategoryBudgetsSet: "No category budgets set. Click 'Set Budgets' to allocate your spending limit.",
+    aiFinancialSummary: 'AI Financial Summary',
+    analyzing: 'Analyzing...',
+    getAnalysis: 'Get Analysis',
 
     // Add Expense Form
     addNewExpense: 'Add New Expense',
@@ -125,6 +132,8 @@ const translations = {
     payInInstallments: 'Pay in installments',
     numberOfInstallments: 'Number of Installments',
     errorInvalidInstallments: 'Please enter a valid number of installments (minimum 2).',
+    scanReceipt: 'Scan Receipt',
+    uploadReceipt: 'Upload a receipt',
 
     // Expense List
     recentExpenses: 'Recent Expenses',
@@ -186,6 +195,15 @@ const translations = {
     nextOn: 'Next on: {{date}}',
     recurringExpenses: 'Recurring Expenses',
     recurringIncomes: 'Recurring Incomes',
+
+    // AI Advisor View
+    aiFinancialAdvisor: 'AI Financial Advisor',
+    aiAdvisorDescription: 'Ask for personalized advice on how to manage your finances and save money based on your spending.',
+    aiAdvisorPlaceholder: 'e.g., How can I reduce my food spending?',
+    getAdvice: 'Get Advice',
+    errorAiAdvice: 'Sorry, I was unable to generate advice at this time.',
+    errorAiAnalysis: 'Sorry, I couldn\'t generate an analysis right now. Please try again later.',
+
 
     // Trend Views
     cumulativeSpendingTrend: 'Cumulative Spending Trend',
@@ -284,6 +302,9 @@ const translations = {
     incomeCategory_other: 'Other',
   },
   tr: {
+    // General
+    language_code: 'tr-TR',
+
     // Auth
     welcomeBack: 'Tekrar Hoş Geldiniz!',
     createAccount: 'Hesap Oluştur',
@@ -359,6 +380,7 @@ const translations = {
     income: 'Gelir',
     incomeTrend: 'Gelir Trendi',
     recurring: 'Tekrarlayan',
+    aiAdvisor: 'YZ Danışman',
 
     // Summary
     totalSpent: 'Toplam Harcama',
@@ -386,6 +408,9 @@ const translations = {
     saving: 'Kaydediliyor...',
     saveBudgets: 'Bütçeleri Kaydet',
     noCategoryBudgetsSet: "Kategori bütçesi belirlenmemiş. Harcama limitinizi tahsis etmek için 'Bütçe Belirle'ye tıklayın.",
+    aiFinancialSummary: 'Yapay Zeka Finansal Özet',
+    analyzing: 'Analiz ediliyor...',
+    getAnalysis: 'Analiz Al',
     
     // Add Expense Form
     addNewExpense: 'Yeni Harcama Ekle',
@@ -404,6 +429,8 @@ const translations = {
     payInInstallments: 'Taksitli Öde',
     numberOfInstallments: 'Taksit Sayısı',
     errorInvalidInstallments: 'Lütfen geçerli bir taksit sayısı girin (en az 2).',
+    scanReceipt: 'Fişi Tara',
+    uploadReceipt: 'Fiş yükle',
 
     // Expense List
     recentExpenses: 'Son Harcamalar',
@@ -465,6 +492,14 @@ const translations = {
     nextOn: 'Sıradaki: {{date}}',
     recurringExpenses: 'Tekrarlayan Giderler',
     recurringIncomes: 'Tekrarlayan Gelirler',
+    
+    // AI Advisor View
+    aiFinancialAdvisor: 'Yapay Zeka Finansal Danışmanı',
+    aiAdvisorDescription: 'Harcamalarınıza göre mali durumunuzu nasıl yöneteceğiniz ve tasarruf edeceğiniz konusunda kişiselleştirilmiş tavsiyeler isteyin.',
+    aiAdvisorPlaceholder: 'ör. Gıda harcamalarımı nasıl azaltabilirim?',
+    getAdvice: 'Tavsiye Al',
+    errorAiAdvice: 'Üzgünüm, şu anda tavsiye oluşturamadım.',
+    errorAiAnalysis: 'Üzgünüm, şu anda bir analiz oluşturamadım. Lütfen daha sonra tekrar deneyin.',
 
     // Trend Views
     cumulativeSpendingTrend: 'Kümülatif Harcama Trendi',
@@ -564,6 +599,9 @@ const translations = {
     incomeCategory_other: 'Diğer',
   },
   it: {
+    // General
+    language_code: 'it-IT',
+
     // Auth
     welcomeBack: 'Bentornato!',
     createAccount: 'Crea Account',
@@ -639,6 +677,7 @@ const translations = {
     income: 'Entrate',
     incomeTrend: 'Andamento Entrate',
     recurring: 'Ricorrenti',
+    aiAdvisor: 'Consulente AI',
 
     // Summary
     totalSpent: 'Spesa Totale',
@@ -666,6 +705,9 @@ const translations = {
     saving: 'Salvataggio...',
     saveBudgets: 'Salva Budget',
     noCategoryBudgetsSet: "Nessun budget di categoria impostato. Clicca 'Imposta Budget' per allocare il tuo limite di spesa.",
+    aiFinancialSummary: 'Riepilogo Finanziario AI',
+    analyzing: 'Analisi in corso...',
+    getAnalysis: 'Ottieni Analisi',
 
     // Add Expense Form
     addNewExpense: 'Aggiungi Nuova Spesa',
@@ -684,6 +726,8 @@ const translations = {
     payInInstallments: 'Paga a rate',
     numberOfInstallments: 'Numero di rate',
     errorInvalidInstallments: 'Inserisci un numero di rate valido (minimo 2).',
+    scanReceipt: 'Scansiona Ricevuta',
+    uploadReceipt: 'Carica una ricevuta',
 
     // Expense List
     recentExpenses: 'Spese Recenti',
@@ -745,6 +789,14 @@ const translations = {
     nextOn: 'Prossima il: {{date}}',
     recurringExpenses: 'Spese Ricorrenti',
     recurringIncomes: 'Entrate Ricorrenti',
+
+    // AI Advisor View
+    aiFinancialAdvisor: 'Consulente Finanziario AI',
+    aiAdvisorDescription: 'Chiedi consigli personalizzati su come gestire le tue finanze e risparmiare denaro in base alle tue spese.',
+    aiAdvisorPlaceholder: 'es. Come posso ridurre le mie spese alimentari?',
+    getAdvice: 'Ottieni Consiglio',
+    errorAiAdvice: 'Spiacente, non sono stato in grado di generare consigli in questo momento.',
+    errorAiAnalysis: 'Spiacente, non sono riuscito a generare un\'analisi in questo momento. Riprova più tardi.',
 
     // Trend Views
     cumulativeSpendingTrend: 'Andamento Spesa Cumulativa',
@@ -843,6 +895,9 @@ const translations = {
     incomeCategory_other: 'Altro',
   },
   ar: {
+    // General
+    language_code: 'ar-SA',
+
     // Auth
     welcomeBack: 'أهلاً بعودتك!',
     createAccount: 'إنشاء حساب',
@@ -918,6 +973,7 @@ const translations = {
     income: 'الدخل',
     incomeTrend: 'اتجاه الدخل',
     recurring: 'متكرر',
+    aiAdvisor: 'مستشار ذكاء اصطناعي',
 
     // Summary
     totalSpent: 'إجمالي المصروفات',
@@ -945,6 +1001,9 @@ const translations = {
     saving: 'جارٍ الحفظ...',
     saveBudgets: 'حفظ الميزانيات',
     noCategoryBudgetsSet: "لم يتم تحديد ميزانيات للفئات. انقر على 'تحديد الميزانيات' لتخصيص حد الإنفاق الخاص بك.",
+    aiFinancialSummary: 'ملخص مالي بالذكاء الاصطناعي',
+    analyzing: 'جارٍ التحليل...',
+    getAnalysis: 'احصل على تحليل',
 
     // Add Expense Form
     addNewExpense: 'إضافة مصروف جديد',
@@ -963,6 +1022,8 @@ const translations = {
     payInInstallments: 'الدفع بالأقساط',
     numberOfInstallments: 'عدد الأقساط',
     errorInvalidInstallments: 'الرجاء إدخال عدد صالح من الأقساط (2 كحد أدنى).',
+    scanReceipt: 'مسح الإيصال',
+    uploadReceipt: 'تحميل إيصال',
 
     // Expense List
     recentExpenses: 'المصروفات الأخيرة',
@@ -1024,6 +1085,14 @@ const translations = {
     nextOn: 'التالي في: {{date}}',
     recurringExpenses: 'المصروفات المتكررة',
     recurringIncomes: 'الدخل المتكرر',
+
+    // AI Advisor View
+    aiFinancialAdvisor: 'مستشار مالي بالذكاء الاصطناعي',
+    aiAdvisorDescription: 'اطلب نصيحة شخصية حول كيفية إدارة أموالك وتوفير المال بناءً على إنفاقك.',
+    aiAdvisorPlaceholder: 'مثال: كيف يمكنني تقليل إنفاقي على الطعام؟',
+    getAdvice: 'احصل على نصيحة',
+    errorAiAdvice: 'عذراً، لم أتمكن من إنشاء نصيحة في هذا الوقت.',
+    errorAiAnalysis: 'عذراً، لم أتمكن من إنشاء تحليل الآن. يرجى المحاولة مرة أخرى لاحقًا.',
 
     // Trend Views
     cumulativeSpendingTrend: 'الاتجاه التراكمي للإنفاق',

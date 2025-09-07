@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 // FIX: Import CategoryId to strongly type the selected category state.
 import type { CategoryId } from '../types';
 import { CATEGORIES } from '../constants';
@@ -24,19 +24,22 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit-card'>('cash');
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState('2');
-  const [errors, setErrors] = useState<{ amount?: string; description?: string; category?: string; installments?: string; }>({});
+  const [errors, setErrors] = useState<{ amount?: string; description?: string; category?: string; installments?: string; aiprocess?: string; }>({});
   const { t } = useLanguage();
   
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestedCategory, setSuggestedCategory] = useState<CategoryId | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const aiRef = useRef<GoogleGenAI | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     if (!aiRef.current) {
       if (process.env.API_KEY) {
         aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
       } else {
-        console.warn("Gemini API key not found. Category suggestion feature is disabled.");
+        console.warn("Gemini API key not found. AI features are disabled.");
       }
     }
   }, []);
@@ -119,6 +122,80 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
     }
   };
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, aiprocess: "Invalid file type. Please select an image."}));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result?.toString().split(',')[1];
+        if (base64String) {
+          processImageWithAI(base64String, file.type);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    if(event.target) {
+        event.target.value = '';
+    }
+  };
+
+  const processImageWithAI = async (base64ImageData: string, mimeType: string) => {
+    if (!aiRef.current) {
+        setErrors(prev => ({ ...prev, aiprocess: "AI client not initialized." }));
+        return;
+    }
+    setIsProcessingImage(true);
+    setErrors({});
+    try {
+        const categoryList = CATEGORIES.map(c => `"${c.id}"`).join(', ');
+
+        const response = await aiRef.current.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: {
+                parts: [
+                    { inlineData: { mimeType, data: base64ImageData } },
+                    { text: `Analyze this receipt image. Extract the total amount, the merchant name or a brief description, and suggest the most appropriate category from this list: [${categoryList}]. Provide only the JSON output.` }
+                ]
+            },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        amount: { type: Type.NUMBER, description: "The total amount from the receipt." },
+                        description: { type: Type.STRING, description: "The merchant name or a brief summary of the items." },
+                        category: { type: Type.STRING, description: `The most fitting category. Must be one of: ${categoryList}` }
+                    },
+                    required: ["amount", "description", "category"]
+                }
+            }
+        });
+        
+        const jsonString = response.text;
+        const result = JSON.parse(jsonString);
+
+        if (result.amount) setAmount(String(result.amount));
+        if (result.description) setDescription(result.description);
+        if (result.category && CATEGORIES.some(c => c.id === result.category)) {
+            setSelectedCategory(result.category as CategoryId);
+        } else {
+            setSelectedCategory('other');
+        }
+
+    } catch (error) {
+        console.error("Error processing receipt with AI:", error);
+        setErrors(prev => ({ ...prev, aiprocess: "Failed to read the receipt. Please enter manually." }));
+    } finally {
+        setIsProcessingImage(false);
+    }
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -161,8 +238,34 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
 
   return (
     <div className="glass-card p-6 h-full">
-      <h2 className="text-xl font-bold text-white mb-4">{t('addNewExpense')}</h2>
+       <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-white">{t('addNewExpense')}</h2>
+        <button 
+            type="button" 
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-3 rounded-lg transition-colors disabled:opacity-50"
+            disabled={isProcessingImage}
+            aria-label={t('uploadReceipt')}
+        >
+            {isProcessingImage ? (
+                <div className="w-5 h-5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /><path fillRule="evenodd" d="M10 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clipRule="evenodd" /></svg>
+            )}
+            <span>{isProcessingImage ? t('processing') : t('scanReceipt')}</span>
+        </button>
+      </div>
+      <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageSelect}
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+      />
+
       <form onSubmit={handleSubmit} className="space-y-4">
+        {errors.aiprocess && <p className="text-yellow-400 text-sm text-center bg-yellow-900/30 p-2 rounded-md">{errors.aiprocess}</p>}
         <div>
           <label htmlFor="amount" className="block text-sm font-medium text-slate-300 mb-1">{t('amount')}</label>
           <input

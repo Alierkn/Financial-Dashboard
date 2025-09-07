@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import type { Currency, Expense } from '../types';
 import { CATEGORIES } from '../constants';
 import { useLanguage } from '../contexts/LanguageProvider';
@@ -172,6 +173,18 @@ export const Summary: React.FC<SummaryProps> = ({
   const [newIncomeGoal, setNewIncomeGoal] = useState<string>('');
   const { t } = useLanguage();
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const aiRef = useRef<GoogleGenAI | null>(null);
+
+  useEffect(() => {
+    if (!aiRef.current) {
+      if (process.env.API_KEY) {
+        aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      }
+    }
+  }, []);
+
   const totalSpent = useMemo(() => {
     return expenses
       .filter(expense => expense.status === 'paid')
@@ -222,6 +235,53 @@ export const Summary: React.FC<SummaryProps> = ({
         const baseCurrencyGoal = conversionRate !== 0 ? goalValue / conversionRate : goalValue;
         onUpdateIncomeGoal(baseCurrencyGoal);
         setIsEditingIncomeGoal(false);
+    }
+  };
+
+  const handleGetAnalysis = async () => {
+    if (!aiRef.current) {
+        console.error("AI client not initialized.");
+        setAnalysis(t('errorAiAnalysis'));
+        return;
+    }
+    setIsAnalyzing(true);
+    setAnalysis(null);
+    try {
+        const categorySpendingText = CATEGORIES
+            .map(cat => {
+                const spent = spendingByCategory[cat.id] || 0;
+                if (spent > 0) {
+                    return `${t(`category_${cat.id}`)}: ${formatCurrency(spent, currency)}`;
+                }
+                return null;
+            })
+            .filter(Boolean)
+            .join(', ');
+
+        const prompt = `
+            You are a helpful and concise financial assistant. Analyze the following financial data for the month and provide a 2-3 sentence summary in the user's language (${t('language_code')}). 
+            Highlight the highest spending category and comment on how close the user is to their budget limit. Be encouraging.
+
+            Data:
+            - Total Spent: ${formatCurrency(totalSpent, currency)}
+            - Budget Limit: ${formatCurrency(limit * conversionRate, currency)}
+            - Remaining Budget: ${formatCurrency(remaining, currency)}
+            - Total Income: ${formatCurrency(totalIncome, currency)}
+            - Spending by Category: ${categorySpendingText || 'No spending yet.'}
+        `;
+
+        const response = await aiRef.current.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        setAnalysis(response.text);
+
+    } catch (error) {
+        console.error("Error getting financial analysis:", error);
+        setAnalysis(t('errorAiAnalysis'));
+    } finally {
+        setIsAnalyzing(false);
     }
   };
   
@@ -327,6 +387,28 @@ export const Summary: React.FC<SummaryProps> = ({
         </div>
       </div>
       
+       {/* AI Financial Summary Section */}
+      <div className="mt-6 border-t border-slate-700 pt-4">
+          <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-semibold text-slate-200">{t('aiFinancialSummary')}</h3>
+              <button 
+                  onClick={handleGetAnalysis} 
+                  disabled={isAnalyzing}
+                  className="text-sm bg-violet-600/50 hover:bg-violet-500/50 text-violet-200 font-semibold py-1.5 px-3 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                  {isAnalyzing ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2H5z" /><path d="M12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414zM5 7a1 1 0 011-1h1a1 1 0 110 2H6a1 1 0 01-1-1zm2 4a1 1 0 011-1h1a1 1 0 110 2H8a1 1 0 01-1-1z" /></svg>
+                  )}
+                  <span>{isAnalyzing ? t('analyzing') : t('getAnalysis')}</span>
+              </button>
+          </div>
+          {analysis && (
+              <p className="text-slate-300 bg-slate-800/40 p-4 rounded-lg animate-fade-in">{analysis}</p>
+          )}
+      </div>
+
       <div className="mt-6 border-t border-slate-700 pt-4">
         <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-slate-200">{t('categorySpending')}</h3>

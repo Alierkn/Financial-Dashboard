@@ -11,6 +11,7 @@ import { CurrencyConverter } from './CurrencyConverter';
 import { ExpenseTrendView } from './ExpenseTrendView';
 import { IncomeTrendView } from './IncomeTrendView';
 import { RecurringView } from './RecurringView'; // New
+import { AIAdvisorView } from './AIAdvisorView'; // New
 import { CATEGORIES, INCOME_CATEGORIES } from '../constants';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
@@ -23,6 +24,7 @@ enum View {
     Trend,
     IncomeTrend,
     Recurring,
+    AIAdvisor,
 }
 
 interface MonthlyViewProps {
@@ -207,7 +209,8 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                             <button onClick={() => setActiveView(View.Category)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Category ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('categories')}</button>
                             <button onClick={() => setActiveView(View.Income)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Income ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('income')}</button>
                             <button onClick={() => setActiveView(View.IncomeTrend)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.IncomeTrend ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('incomeTrend')}</button>
-                             <button onClick={() => setActiveView(View.Recurring)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Recurring ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('recurring')}</button>
+                            <button onClick={() => setActiveView(View.Recurring)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.Recurring ? 'border-b-2 border-sky-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('recurring')}</button>
+                            <button onClick={() => setActiveView(View.AIAdvisor)} className={`py-2 px-4 font-medium transition-colors ${activeView === View.AIAdvisor ? 'border-b-2 border-violet-400 text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}>{t('aiAdvisor')}</button>
                         </div>
                         
                         <div className="max-h-[420px] overflow-y-auto pr-2">
@@ -252,6 +255,12 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                                     isSubmitting={isSubmitting}
                                     deletingRecurringId={deletingRecurringId}
                                     baseCurrency={monthData.currency}
+                                />
+                             ) : activeView === View.AIAdvisor ? (
+                                <AIAdvisorView 
+                                    expenses={monthData.expenses}
+                                    currency={displayCurrency}
+                                    conversionRate={conversionRate}
                                 />
                             ) : null}
                         </div>
