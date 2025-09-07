@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Expense, Currency } from '../types';
 import { useLanguage } from '../contexts/LanguageProvider';
@@ -9,22 +9,21 @@ interface AIAdvisorViewProps {
   conversionRate: number;
 }
 
+// Initialize the AI client at the module level
+const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
+if (!ai) {
+  console.warn("Gemini AI client for AIAdvisorView could not be initialized. API key might be missing.");
+}
+
 export const AIAdvisorView: React.FC<AIAdvisorViewProps> = ({ expenses, currency, conversionRate }) => {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [advice, setAdvice] = useState<string | null>(null);
   const [isAdvising, setIsAdvising] = useState(false);
-  const aiRef = useRef<GoogleGenAI | null>(null);
-
-  useEffect(() => {
-    if (!aiRef.current && process.env.API_KEY) {
-      aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    }
-  }, []);
 
   const handleGetAdvice = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!aiRef.current || !query.trim() || isAdvising) return;
+    if (!ai || !query.trim() || isAdvising) return;
 
     setIsAdvising(true);
     setAdvice(null);
@@ -52,7 +51,7 @@ export const AIAdvisorView: React.FC<AIAdvisorViewProps> = ({ expenses, currency
         User's Spending Summary This Month: ${spendingText || 'No spending yet.'}
       `;
 
-      const response = await aiRef.current.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
       });

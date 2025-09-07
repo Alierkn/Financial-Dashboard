@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Currency, Expense } from '../types';
 import { CATEGORIES } from '../constants';
@@ -29,6 +29,12 @@ const formatCurrency = (value: number, currency: Currency) => {
 const defaultColorMap: { [key: string]: string } = Object.fromEntries(
     CATEGORIES.map(cat => [cat.id, cat.hexColor])
 );
+
+// Initialize the AI client at the module level
+const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
+if (!ai) {
+  console.warn("Gemini AI client could not be initialized. API key might be missing.");
+}
 
 const CategoryBudgetEditor: React.FC<{
     limit: number,
@@ -175,13 +181,6 @@ export const Summary: React.FC<SummaryProps> = ({
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
-  const aiRef = useRef<GoogleGenAI | null>(null);
-
-  useEffect(() => {
-    if (!aiRef.current && process.env.API_KEY) {
-      aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    }
-  }, []);
 
   const totalSpent = useMemo(() => {
     return expenses
@@ -237,7 +236,7 @@ export const Summary: React.FC<SummaryProps> = ({
   };
 
   const handleGetAnalysis = async () => {
-    if (!aiRef.current) {
+    if (!ai) {
         console.error("AI client not initialized.");
         setAnalysis(t('errorAiAnalysis'));
         return;
@@ -268,7 +267,7 @@ export const Summary: React.FC<SummaryProps> = ({
             - Spending by Category: ${categorySpendingText || 'No spending yet.'}
         `;
 
-        const response = await aiRef.current.models.generateContent({
+        const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });

@@ -17,6 +17,12 @@ interface AddExpenseFormProps {
   isSubmitting?: boolean;
 }
 
+// Initialize the AI client at the module level
+const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
+if (!ai) {
+  console.warn("Gemini AI client for AddExpenseForm could not be initialized. API key might be missing.");
+}
+
 export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, isSubmitting }) => {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -30,25 +36,17 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestedCategory, setSuggestedCategory] = useState<CategoryId | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const aiRef = useRef<GoogleGenAI | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-
-  useEffect(() => {
-    if (!aiRef.current && process.env.API_KEY) {
-      aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    }
-  }, []);
-
   const getCategorySuggestion = useCallback(async (text: string) => {
-    if (!aiRef.current || text.trim().length < 5) return;
+    if (!ai || text.trim().length < 5) return;
     setIsSuggesting(true);
     setSuggestedCategory(null);
     try {
       const categoryList = CATEGORIES.map(c => c.id).join(', ');
       const prompt = `Based on the expense description "${text}", which of these categories is most appropriate? Categories: [${categoryList}]. Respond with only one category ID from the list.`;
       
-      const response = await aiRef.current.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
       });
@@ -63,7 +61,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
     } finally {
       setIsSuggesting(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!description) {
@@ -141,7 +139,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
   };
 
   const processImageWithAI = async (base64ImageData: string, mimeType: string) => {
-    if (!aiRef.current) {
+    if (!ai) {
         setErrors(prev => ({ ...prev, aiprocess: "AI client not initialized." }));
         return;
     }
@@ -150,7 +148,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ onAddExpense, is
     try {
         const categoryList = CATEGORIES.map(c => `"${c.id}"`).join(', ');
 
-        const response = await aiRef.current.models.generateContent({
+        const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: {
                 parts: [
