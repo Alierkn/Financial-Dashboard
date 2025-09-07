@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
@@ -203,7 +204,7 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   };
 
   const handleAddExpense = async (expenseData: { amount: number; description: string; category: CategoryId; paymentMethod: 'cash' | 'credit-card'; isInstallment: boolean; installments: number; }) => {
-    if (!activeMonthId) { addToast(t('errorActiveMonth'), 'error'); return false; }
+    if (!activeMonthId || !activeMonthData) { addToast(t('errorActiveMonth'), 'error'); return false; }
 
     const { amount, installments, isInstallment, ...rest } = expenseData;
     const installmentId = isInstallment ? `inst-${Date.now()}` : undefined;
@@ -233,6 +234,20 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
             
             if (docSnap.exists) {
                 batch.update(docRef, { expenses: firebase.firestore.FieldValue.arrayUnion(newExpense) });
+            } else {
+                // FIX: Automatically create future month documents if they don't exist.
+                const newMonthTemplate: Omit<MonthlyData, 'id'> = {
+                    year: targetYear,
+                    month: targetMonth,
+                    limit: activeMonthData.limit,
+                    baseIncome: activeMonthData.baseIncome,
+                    currency: activeMonthData.currency,
+                    incomeGoal: activeMonthData.incomeGoal,
+                    categoryBudgets: activeMonthData.categoryBudgets,
+                    expenses: [newExpense],
+                    incomeTransactions: [],
+                };
+                batch.set(docRef, newMonthTemplate);
             }
         }
         await batch.commit();
