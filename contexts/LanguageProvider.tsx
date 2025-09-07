@@ -412,7 +412,7 @@ const translations = {
     noCategoryBudgetsSet: "Kategori bütçesi belirlenmemiş. Harcama limitinizi tahsis etmek için 'Bütçe Belirle'ye tıklayın.",
     aiFinancialSummary: 'Yapay Zeka Finansal Özet',
     analyzing: 'Analiz ediliyor...',
-    getAnalysis: 'Analiz Al',
+    getAnalysis: 'Analiz Oluştur',
     
     // Add Expense Form
     addNewExpense: 'Yeni Harcama Ekle',
@@ -499,7 +499,7 @@ const translations = {
     aiFinancialAdvisor: 'Yapay Zeka Finansal Danışmanı',
     aiAdvisorDescription: 'Harcamalarınıza göre mali durumunuzu nasıl yöneteceğiniz ve tasarruf edeceğiniz konusunda kişiselleştirilmiş tavsiyeler isteyin.',
     aiAdvisorPlaceholder: 'ör. Gıda harcamalarımı nasıl azaltabilirim?',
-    getAdvice: 'Tavsiye Al',
+    getAdvice: 'Tavsiye İste',
     errorAiAdvice: 'Üzgünüm, şu anda tavsiye oluşturamadım.',
     errorAiAnalysis: 'Üzgünüm, şu anda bir analiz oluşturamadım. Lütfen daha sonra tekrar deneyin.',
 
