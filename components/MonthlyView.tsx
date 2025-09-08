@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
-import type { MonthlyData, Expense, Currency, IncomeSource, IncomeTransaction, CategoryId, RecurringTransaction } from '../types';
+import type { MonthlyData, Expense, Currency, IncomeTransaction, CategoryId, RecurringTransaction } from '../types';
 import { Summary } from './Summary';
 import { AddExpenseForm } from './AddExpenseForm';
 import { ExpenseList } from './ExpenseList';
@@ -31,7 +31,6 @@ interface MonthlyViewProps {
     // FIX: Use `firebase.User` type from the compat library.
     user: firebase.User;
     monthData: MonthlyData;
-    incomeSources: IncomeSource[];
     recurringTransactions: RecurringTransaction[]; // New
     onAddExpense: (expenseData: {
         amount: number;
@@ -43,12 +42,9 @@ interface MonthlyViewProps {
     }) => Promise<boolean>;
     onDeleteExpense: (id: string) => Promise<void>;
     onConfirmPayment: (id: string) => Promise<void>;
-    onAddIncomeSource: (source: Omit<IncomeSource, 'id'>) => Promise<boolean>;
-    onDeleteIncomeSource: (id: string) => Promise<void>;
-    onUpdateIncomeSource: (source: IncomeSource) => Promise<boolean>;
-    onAddIncomeTransaction: (source: IncomeSource, date: string) => Promise<boolean>;
-    onDeleteIncomeTransaction: (id: string) => Promise<void>;
-    onUpdateIncomeTransactionStatus: (id: string, status: 'completed') => Promise<void>;
+    onAddIncome: (income: Omit<IncomeTransaction, 'id'>) => Promise<boolean>;
+    onDeleteIncome: (id: string) => Promise<void>;
+    onUpdateIncome: (income: IncomeTransaction) => Promise<boolean>;
     onUpdateCategoryBudgets: (budgets: { [key: string]: number }) => Promise<boolean>;
     onUpdateCategoryColors: (colors: { [key: string]: string }) => Promise<boolean>;
     categoryColors: { [key: string]: string };
@@ -66,19 +62,17 @@ interface MonthlyViewProps {
     submitError: string | null;
     deletingExpenseId: string | null;
     confirmingPaymentId: string | null;
-    deletingSourceId: string | null;
     deletingTransactionId: string | null;
     deletingRecurringId: string | null; // New
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
     const { 
-        user, monthData, incomeSources, recurringTransactions, onAddExpense, onDeleteExpense, onConfirmPayment,
-        onAddIncomeSource, onDeleteIncomeSource, onUpdateIncomeSource, onAddIncomeTransaction, onDeleteIncomeTransaction,
-        onUpdateIncomeTransactionStatus, onUpdateCategoryBudgets, onUpdateCategoryColors, categoryColors, onUpdateIncomeGoal,
+        user, monthData, recurringTransactions, onAddExpense, onDeleteExpense, onConfirmPayment,
+        onAddIncome, onDeleteIncome, onUpdateIncome, onUpdateCategoryBudgets, onUpdateCategoryColors, categoryColors, onUpdateIncomeGoal,
         onBackToDashboard, onSignOut, onAddRecurringTransaction, onDeleteRecurringTransaction, displayCurrency, onDisplayCurrencyChange,
         conversionRate, ratesLoading, ratesError, isSubmitting, submitError, deletingExpenseId, confirmingPaymentId,
-        deletingSourceId, deletingTransactionId, deletingRecurringId,
+        deletingTransactionId, deletingRecurringId,
     } = props;
   
     const [activeView, setActiveView] = useState<View>(View.List);
@@ -222,20 +216,15 @@ export const MonthlyView: React.FC<MonthlyViewProps> = (props) => {
                                 <ExpenseTrendView expenses={monthData.expenses} currency={displayCurrency} conversionRate={conversionRate} month={monthData.month} year={monthData.year} />
                             ) : activeView === View.Income ? (
                                 <IncomeView 
-                                    incomeSources={incomeSources}
                                     incomeTransactions={monthData.incomeTransactions}
                                     baseCurrency={monthData.currency}
                                     displayCurrency={displayCurrency}
-                                    onAddSource={onAddIncomeSource}
-                                    onDeleteSource={onDeleteIncomeSource}
-                                    onUpdateSource={onUpdateIncomeSource}
-                                    onAddTransaction={onAddIncomeTransaction}
-                                    onDeleteTransaction={onDeleteIncomeTransaction}
-                                    onUpdateTransactionStatus={onUpdateIncomeTransactionStatus}
+                                    onAddIncome={onAddIncome}
+                                    onDeleteIncome={onDeleteIncome}
+                                    onUpdateIncome={onUpdateIncome}
                                     conversionRate={conversionRate}
                                     incomeGoal={monthData.incomeGoal}
                                     isSubmitting={isSubmitting}
-                                    deletingSourceId={deletingSourceId}
                                     deletingTransactionId={deletingTransactionId}
                                 />
                             ) : activeView === View.IncomeTrend ? (

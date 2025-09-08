@@ -38,13 +38,6 @@ export interface Expense {
   };
 }
 
-export interface IncomeSource {
-  id:string;
-  name: string;
-  amount: number;
-  category: IncomeCategory['id'];
-}
-
 export interface IncomeTransaction {
   id: string;
   name: string; 

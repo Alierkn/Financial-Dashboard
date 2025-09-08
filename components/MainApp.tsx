@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 // FIX: The `User` type is not exported from 'firebase/auth' in the compat library. It should be accessed via the `firebase` object.
 import { firebase } from '../firebase';
 import { useExchangeRates } from '../hooks/useExchangeRates';
-import type { Expense, Currency, IncomeSource, IncomeTransaction, MonthlyData, CategoryId, RecurringTransaction, IncomeCategoryId } from '../types';
+import type { Expense, Currency, IncomeTransaction, MonthlyData, CategoryId, RecurringTransaction, IncomeCategoryId } from '../types';
 import { CURRENCIES } from '../constants';
 import { Dashboard } from './Dashboard';
 import { MonthlySetup } from './MonthlySetup';
@@ -39,7 +39,6 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const { t } = useLanguage();
   const { addToast } = useToast();
   const [allMonthlyData, setAllMonthlyData] = useState<MonthlyData[]>([]);
-  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>(CURRENCIES[0]);
   const [categoryColors, setCategoryColors] = useState<{ [key: string]: string }>({});
@@ -56,12 +55,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
   const [deletingMonthId, setDeletingMonthId] = useState<string | null>(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(null);
-  const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [deletingRecurringId, setDeletingRecurringId] = useState<string | null>(null);
 
   const monthlyDataRef = useMemo(() => db!.collection('users').doc(user.uid).collection('monthlyData'), [user.uid]);
-  const incomeSourcesRef = useMemo(() => db!.collection('users').doc(user.uid).collection('incomeSources'), [user.uid]);
   const recurringTransactionsRef = useMemo(() => db!.collection('users').doc(user.uid).collection('recurringTransactions'), [user.uid]);
   const preferencesRef = useMemo(() => db!.collection('users').doc(user.uid).collection('preferences').doc('main'), [user.uid]);
 
@@ -84,10 +81,6 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
          setLoading(false);
        }
     }, (error) => handleError(error, 'financial data'));
-
-    const unsubscribeIncomeSources = incomeSourcesRef.onSnapshot(snapshot => {
-      setIncomeSources(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as IncomeSource)));
-    }, (error) => handleError(error, 'income sources'));
     
     const unsubscribeRecurring = recurringTransactionsRef.onSnapshot(snapshot => {
       setRecurringTransactions(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as RecurringTransaction)));
@@ -103,11 +96,10 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
 
     return () => {
       unsubscribeMonthlyData();
-      unsubscribeIncomeSources();
       unsubscribePreferences();
       unsubscribeRecurring();
     };
-  }, [monthlyDataRef, incomeSourcesRef, preferencesRef, recurringTransactionsRef, t, loading]);
+  }, [monthlyDataRef, preferencesRef, recurringTransactionsRef, t, loading]);
 
   useEffect(() => {
     if (loading || recurringTransactions.length === 0) return;
@@ -367,56 +359,36 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
       setConfirmingPaymentId(null);
   };
 
-  const handleAddIncomeSource = async (source: Omit<IncomeSource, 'id'>) => {
-    const result = await handleFirestoreOp(
-        () => incomeSourcesRef.add(source),
-        t('successSourceAdded'),
-        t('errorAddSource')
-    );
-    return result !== null;
-  };
-
-  const handleUpdateIncomeSource = async (source: IncomeSource) => {
-    const { id, ...data } = source;
-    const result = await handleFirestoreOp(
-        () => incomeSourcesRef.doc(id).update(data),
-        t('successSourceUpdated'),
-        t('errorUpdateSource')
-    );
-    return result !== null;
-  };
-
-  const handleDeleteIncomeSource = async (id: string) => {
-    setDeletingSourceId(id);
-    await handleFirestoreOp(
-        () => incomeSourcesRef.doc(id).delete(),
-        t('successSourceDeleted'),
-        t('errorDeleteSource')
-    );
-    setDeletingSourceId(null);
-  };
-
-  const handleAddIncomeTransaction = async (source: IncomeSource, date: string) => {
+  const handleAddIncome = async (incomeData: Omit<IncomeTransaction, 'id'>) => {
     if (!activeMonthId) return false;
     const newTransaction: IncomeTransaction = {
       id: `inc-${Date.now()}`,
-      name: source.name,
-      amount: source.amount,
-      date: new Date(date).toISOString(),
-      category: source.category,
-      status: 'pending'
+      ...incomeData,
     };
     const result = await handleFirestoreOp(
-        () => monthlyDataRef.doc(activeMonthId).update({
-            incomeTransactions: firebase.firestore.FieldValue.arrayUnion(newTransaction)
-        }),
-        t('successTransactionAdded'),
-        t('errorAddTransaction')
+      () => monthlyDataRef.doc(activeMonthId).update({
+        incomeTransactions: firebase.firestore.FieldValue.arrayUnion(newTransaction)
+      }),
+      t('successTransactionAdded'),
+      t('errorAddTransaction')
     );
     return result !== null;
   };
-
-  const handleDeleteIncomeTransaction = async (id: string) => {
+  
+  const handleUpdateIncome = async (income: IncomeTransaction) => {
+    if (!activeMonthId || !activeMonthData) return false;
+    const updatedTransactions = activeMonthData.incomeTransactions.map(t =>
+      t.id === income.id ? income : t
+    );
+    const result = await handleFirestoreOp(
+      () => monthlyDataRef.doc(activeMonthId).update({ incomeTransactions: updatedTransactions }),
+      t('successTransactionUpdated'),
+      t('errorUpdateTransaction')
+    );
+    return result !== null;
+  };
+  
+  const handleDeleteIncome = async (id: string) => {
     if (!activeMonthId || !activeMonthData) return;
     setDeletingTransactionId(id);
     const updatedTransactions = activeMonthData.incomeTransactions.filter(t => t.id !== id);
@@ -426,18 +398,6 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
         t('errorDeleteTransaction')
     );
     setDeletingTransactionId(null);
-  };
-  
-  const handleUpdateIncomeTransactionStatus = async (id: string, status: 'completed') => {
-    if (!activeMonthId || !activeMonthData) return;
-    const updatedTransactions = activeMonthData.incomeTransactions.map(t =>
-        t.id === id ? { ...t, status } : t
-    );
-    await handleFirestoreOp(
-        () => monthlyDataRef.doc(activeMonthId).update({ incomeTransactions: updatedTransactions }),
-        t('successTransactionUpdated'),
-        t('errorUpdateTransaction')
-    );
   };
 
   const handleUpdateCategoryBudgets = async (budgets: { [key: string]: number }) => {
@@ -539,17 +499,13 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
         return <MonthlyView 
                   user={user}
                   monthData={activeMonthData}
-                  incomeSources={incomeSources}
                   recurringTransactions={recurringTransactions}
                   onAddExpense={handleAddExpense}
                   onDeleteExpense={handleDeleteExpense}
                   onConfirmPayment={handleConfirmPayment}
-                  onAddIncomeSource={handleAddIncomeSource}
-                  onDeleteIncomeSource={handleDeleteIncomeSource}
-                  onUpdateIncomeSource={handleUpdateIncomeSource}
-                  onAddIncomeTransaction={handleAddIncomeTransaction}
-                  onDeleteIncomeTransaction={handleDeleteIncomeTransaction}
-                  onUpdateIncomeTransactionStatus={handleUpdateIncomeTransactionStatus}
+                  onAddIncome={handleAddIncome}
+                  onDeleteIncome={handleDeleteIncome}
+                  onUpdateIncome={handleUpdateIncome}
                   onUpdateCategoryBudgets={handleUpdateCategoryBudgets}
                   onUpdateCategoryColors={handleUpdateCategoryColors}
                   categoryColors={categoryColors}
@@ -567,7 +523,6 @@ export const MainApp: React.FC<MainAppProps> = ({ user }) => {
                   submitError={submitError}
                   deletingExpenseId={deletingExpenseId}
                   confirmingPaymentId={confirmingPaymentId}
-                  deletingSourceId={deletingSourceId}
                   deletingTransactionId={deletingTransactionId}
                   deletingRecurringId={deletingRecurringId}
                 />;
