@@ -78,7 +78,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
         if (!value.trim()) return t('errorEnterSourceName');
         break;
       case 'amount':
-        const amountValue = parseFloat(value);
+        const amountValue = parseFloat(value.replace(',', '.'));
         if (isNaN(amountValue) || amountValue <= 0) return t('errorInvalidAmount');
         break;
     }
@@ -95,7 +95,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
       return;
     }
 
-    const success = await onAddSource({ name: sourceName.trim(), amount: parseFloat(sourceAmount), category: sourceCategory });
+    const success = await onAddSource({ name: sourceName.trim(), amount: parseFloat(sourceAmount.replace(',', '.')), category: sourceCategory });
     if(success) {
         setSourceName('');
         setSourceAmount('');
@@ -131,7 +131,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
     const success = await onUpdateSource({
       id: sourceId,
       name: editFormData.name.trim(),
-      amount: parseFloat(editFormData.amount),
+      amount: parseFloat(editFormData.amount.replace(',', '.')),
       category: editFormData.category,
     });
     if (success) setEditingSourceId(null);
