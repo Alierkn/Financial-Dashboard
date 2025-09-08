@@ -34,6 +34,15 @@ const CompletedIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
+// FIX: Implemented a robust number parsing function to handle locale-specific formats.
+// This function correctly parses numbers like "1.500,50" by treating dots as
+// thousand separators and commas as decimal separators.
+const parseFloatLocale = (value: string) => {
+    if (typeof value !== 'string') return NaN;
+    // Remove all dots (thousands separators) and then replace the comma with a dot (decimal separator).
+    return parseFloat(value.replace(/\./g, '').replace(',', '.'));
+};
+
 
 export const IncomeView: React.FC<IncomeViewProps> = (props) => {
   const {
@@ -74,7 +83,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
         if (!value.trim()) return t('errorEnterSourceName');
         break;
       case 'amount':
-        const amountValue = parseFloat(value.replace(',', '.'));
+        const amountValue = parseFloatLocale(value);
         if (isNaN(amountValue) || amountValue <= 0) return t('errorInvalidAmount');
         break;
     }
@@ -91,7 +100,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
       return;
     }
 
-    const success = await onAddSource({ name: sourceName.trim(), amount: parseFloat(sourceAmount.replace(',', '.')), category: sourceCategory });
+    const success = await onAddSource({ name: sourceName.trim(), amount: parseFloatLocale(sourceAmount), category: sourceCategory });
     if(success) {
         setSourceName('');
         setSourceAmount('');
@@ -127,7 +136,7 @@ export const IncomeView: React.FC<IncomeViewProps> = (props) => {
     const success = await onUpdateSource({
       id: sourceId,
       name: editFormData.name.trim(),
-      amount: parseFloat(editFormData.amount.replace(',', '.')),
+      amount: parseFloatLocale(editFormData.amount),
       category: editFormData.category,
     });
     if (success) setEditingSourceId(null);
